@@ -9,19 +9,19 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
-import kotlin.system.exitProcess
 
 class KommServerSocket(
     private val host: String,
     private val port: Int
 ): Thread() {
 
+    private lateinit var serverSocket: ServerSocket
     private val clients = CopyOnWriteArrayList<ClientHandler>()
     private val executor = Executors.newCachedThreadPool()
 
     override fun run() {
         try {
-            val serverSocket = ServerSocket(port, 10, InetAddress.getByName(host))
+            serverSocket = ServerSocket(port, 10, InetAddress.getByName(host))
             println("ApplicationServer started on $host:$port")
 
             while (true) {
@@ -61,9 +61,9 @@ class KommServerSocket(
         }
     }
 
-    private fun killServer() {
+    fun killServer() {
         executor.shutdownNow()
-        exitProcess(0)
+        serverSocket.close()
     }
 
 
@@ -86,7 +86,7 @@ class KommServerSocket(
                 output.println(welcomeKommData.toJson())
                 broadcastMessage(senderId = clientId!!, sayHelloKommData.toJson())
 
-                var message: String? = null
+                var message: String?
                 while (true) {
                     message = input.readLine()
                     val receivedKommData = message.decodeJson()

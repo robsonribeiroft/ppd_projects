@@ -11,7 +11,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.*
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -27,27 +27,27 @@ import org.robsonribeiro.ppd.component.WindowBarComponent
 import org.robsonribeiro.ppd.helper.NetworkInputValidator
 import org.robsonribeiro.ppd.helper.screenDimensions
 import org.robsonribeiro.ppd.helper.toDpSize
-import org.robsonribeiro.ppd.komms.SERVER_HOSTNAME
-import org.robsonribeiro.ppd.komms.SERVER_PORT
 import org.robsonribeiro.ppd.values.ColorResources
 import org.robsonribeiro.ppd.values.Padding
 import org.robsonribeiro.ppd.values.empty
 
 
-private const val TEXT_FIELD_HINT = "Default Address on localhost:12345"
-private const val BUTTON_CONFIRM = "Start Server"
-private const val DIALOG_TITLE = "Enter Server Address"
+private const val TEXT_FIELD_HINT = "e.g., your name, 1_bit_2_win"
+private const val BUTTON_CONFIRM = "Join"
+private const val DIALOG_TITLE = "Enter Your Nickname"
+private const val DIALOG_WINDOW_BAR = "Join to Server"
+private const val INVALID_ID = "The nickname is invalid! $TEXT_FIELD_HINT"
+
 
 @Composable
-fun ConnectToServerDialog(
+fun JoinClientToServerDialog(
     modifier: Modifier = Modifier,
-    initialValue: String = "$SERVER_HOSTNAME:$SERVER_PORT",
-    onConnect: (host: String, port: Int) -> Unit,
+    onConnect: (clientId: String) -> Unit,
     onDismissRequest: () -> Unit
 ) {
     var textFieldHasFocus by remember { mutableStateOf(false) }
     var textFieldValue by remember { mutableStateOf(String.empty) }
-    var validationResult by remember { mutableStateOf(NetworkInputValidator.validateServerAddress(String.empty)) }
+    var validationResult by remember { mutableStateOf(NetworkInputValidator.validateClientId(String.empty)) }
     val textFieldHintText = {
         if (textFieldHasFocus || textFieldValue.isNotEmpty())
             String.empty
@@ -56,11 +56,9 @@ fun ConnectToServerDialog(
     }
 
     val attemptConnection = {
-        val selectAddress = textFieldValue.ifEmpty { initialValue }
-        val result = NetworkInputValidator.validateServerAddress(selectAddress)
-        validationResult = result
-        if (result.isValid) {
-            onConnect(result.host!!, result.port!!)
+        val result = NetworkInputValidator.validateClientId(textFieldValue)
+        if (result) {
+            onConnect(textFieldValue)
         }
     }
 
@@ -90,19 +88,19 @@ fun ConnectToServerDialog(
     ) {
         BentoComponent(
             modifier
-                .fillMaxSize()
-                .border(
-                    width = Padding.single,
-                    brush = Brush.linearGradient(
-                        colors = listOf(Color.Gray, Color.Transparent),
-                    ),
-                    shape = RoundedCornerShape(Padding.regular)
-                )
+            .fillMaxSize()
+            .border(
+                width = Padding.single,
+                brush = Brush.linearGradient(
+                    colors = listOf(Color.Gray, Color.Transparent),
+                ),
+                shape = RoundedCornerShape(Padding.regular)
+            )
         ) {
             Column {
                 WindowDraggableArea {
                     WindowBarComponent(
-                        title = "Connect to Server",
+                        title = DIALOG_WINDOW_BAR,
                         barGradientColors = ColorResources.background_gradient
                     ) { onDismissRequest() }
                 }
@@ -123,10 +121,10 @@ fun ConnectToServerDialog(
                         value = textFieldValue,
                         onValueChange = {
                             textFieldValue = it
-                            validationResult = NetworkInputValidator.validateServerAddress(it)
+                            validationResult = NetworkInputValidator.validateClientId(it)
                         },
                         label = { Text(textFieldHintText()) },
-                        isError = !validationResult.isValid && textFieldValue.isNotEmpty(), // Show error only if invalid and not empty
+                        isError = !validationResult && textFieldValue.isNotEmpty(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
@@ -156,9 +154,9 @@ fun ConnectToServerDialog(
                         )
                     )
 
-                    if (!validationResult.isValid && textFieldValue.isNotEmpty()) {
+                    if (!validationResult) {
                         Text(
-                            text = validationResult.errorMessage ?: String.empty,
+                            text = INVALID_ID,
                             color = MaterialTheme.colors.error,
                             style = MaterialTheme.typography.caption,
                             modifier = Modifier.padding(top = Padding.small)
@@ -188,7 +186,7 @@ fun ConnectToServerDialog(
                     }
                     Button(
                         onClick = attemptConnection,
-                        enabled = validationResult.isValid || textFieldValue.isEmpty(),
+                        enabled = validationResult,
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = ColorResources.GreenEmerald,
                             contentColor = ColorResources.White

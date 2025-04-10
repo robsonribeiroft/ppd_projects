@@ -8,10 +8,13 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.robsonribeiro.ppd.component.BentoComponent
 import org.robsonribeiro.ppd.component.chat.ChatComponent
 import org.robsonribeiro.ppd.component.game.GameBoard
-import org.robsonribeiro.ppd.component.server.ServerButtonComponent
+import org.robsonribeiro.ppd.component.server.ConnectClientButtonComponent
+import org.robsonribeiro.ppd.component.server.StartServerButtonComponent
 import org.robsonribeiro.ppd.dialog.ConnectToServerDialog
-import org.robsonribeiro.ppd.model.MOCK_CHAT_MESSAGE
+import org.robsonribeiro.ppd.dialog.InfoDialog
+import org.robsonribeiro.ppd.dialog.JoinClientToServerDialog
 import org.robsonribeiro.ppd.values.Padding
+import org.robsonribeiro.ppd.values.StringResources
 import org.robsonribeiro.ppd.viewmodel.ClientViewModel
 
 @Composable
@@ -21,7 +24,13 @@ fun ClientContentWindow(
     onExitApplication: ()->Unit
 ) {
 
+    val serverState by clientViewModel.serverState.collectAsState()
+    val clientState by clientViewModel.clientState.collectAsState()
+    val chatIsEnabled by clientViewModel.chatIsEnabled.collectAsState()
+
     var showConnectToServerDialog by remember { mutableStateOf(false) }
+    var showJoinClientToServerDialog by remember { mutableStateOf(false) }
+    var showInfoDialog by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     val chatlogs by clientViewModel.chatlogs.collectAsState()
 
@@ -42,7 +51,8 @@ fun ClientContentWindow(
                 BentoComponent(Modifier.weight(1f)){
                     ChatComponent(
                         Modifier,
-                        messages = chatlogs
+                        messages = chatlogs,
+                        chatIsEnabled = chatIsEnabled
                     ) { sendMessage ->
                         clientViewModel.sendMessage(sendMessage)
                     }
@@ -51,19 +61,55 @@ fun ClientContentWindow(
                     Modifier.weight(2f),
                     verticalArrangement = Arrangement.spacedBy(Padding.large)
                 ) {
-                    BentoComponent(Modifier.weight(1f)) {
+                    BentoComponent(Modifier.weight(8f)) {
                         GameBoard(Modifier.fillMaxSize())
                     }
-                    BentoComponent(
-                        Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier.weight(2f),
+                        horizontalArrangement = Arrangement.spacedBy(Padding.large)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(Padding.large)
+                        BentoComponent(
+                            Modifier.weight(1f)
                         ) {
-                            ServerButtonComponent {
-                                showConnectToServerDialog = true
+                            Column (
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(Padding.regular),
+                                verticalArrangement = Arrangement.spacedBy(Padding.small)
+                            ) {
+                                StartServerButtonComponent(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    serverIsRunning = serverState
+                                ) {
+                                    if (serverState.first) {
+                                        clientViewModel.killServer()
+                                    } else {
+                                        showConnectToServerDialog = true
+                                    }
+                                }
+                                ConnectClientButtonComponent(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    clientIsConnected = clientState
+                                ) {
+                                    if (serverState.first) {
+                                        showJoinClientToServerDialog = true
+                                    } else {
+                                        showInfoDialog =
+                                            StringResources.INFO_DIALOG_TITLE_JOIN_WITH_DISABLED_SERVER to StringResources.INFO_DIALOG_DESCRIPTION_JOIN_WITH_DISABLED_SERVER
+                                    }
+                                }
+                            }
+                        }
+
+                        BentoComponent(
+                            Modifier.weight(2f)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(Padding.large)
+                            ) {
+
                             }
                         }
                     }
@@ -83,6 +129,27 @@ fun ClientContentWindow(
                     showConnectToServerDialog = false
                 }
             )
+        }
+
+        if (showJoinClientToServerDialog) {
+            JoinClientToServerDialog(
+                modifier = Modifier,
+                onDismissRequest = {
+                    showJoinClientToServerDialog = false
+                },
+                onConnect = { clientId ->
+                    clientViewModel.registerClient(clientId)
+                    showJoinClientToServerDialog = false
+                }
+            )
+        }
+
+        if (showInfoDialog != null) {
+            InfoDialog(
+                content = showInfoDialog
+            ) {
+                showInfoDialog = null
+            }
         }
     }
 }

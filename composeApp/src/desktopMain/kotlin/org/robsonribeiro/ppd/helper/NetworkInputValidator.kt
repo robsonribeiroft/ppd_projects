@@ -44,4 +44,8 @@ object NetworkInputValidator {
 
         return ValidationResult(host = hostResultIp, port = port)
     }
+
+    fun validateClientId(input: String): Boolean {
+        return input.isNotEmpty()
+    }
 }

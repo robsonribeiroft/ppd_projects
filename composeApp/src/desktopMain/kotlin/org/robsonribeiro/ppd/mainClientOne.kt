@@ -6,10 +6,7 @@ import org.robsonribeiro.ppd.window.ClientWindow
 
 fun main() = application {
     ClientWindow(
-        clientViewModel = ClientViewModel(
-            startServer = true,
-            clientId = "Robson_One"
-        )
+        clientViewModel = ClientViewModel()
     ) {
         exitApplication()
     }

@@ -31,6 +31,7 @@ fun ChatTextFieldComponent(
     placeholderText: String = StringResources.CHAT_TEXT_FIELD_HINT,
     keyboardType: KeyboardType = KeyboardType.Text,
     modifier: Modifier = Modifier,
+    isEnabled: Boolean = false,
     onSend: (String) -> Unit
 ) {
     var text by remember { mutableStateOf(String.empty) }
@@ -38,7 +39,7 @@ fun ChatTextFieldComponent(
     val focusManager = LocalFocusManager.current
 
     OutlinedTextField(
-
+        enabled = isEnabled,
         value = text,
         onValueChange = { text = it },
         placeholder = { Text(placeholderText) },

@@ -17,6 +17,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.robsonribeiro.ppd.component.WindowBarComponent
 import org.robsonribeiro.ppd.dialog.ExitApplicationDialog
 import org.robsonribeiro.ppd.helper.screenDimensions
+import org.robsonribeiro.ppd.helper.toDpSize
 import org.robsonribeiro.ppd.values.StringResources
 import org.robsonribeiro.ppd.values.empty
 import org.robsonribeiro.ppd.viewmodel.ClientViewModel
@@ -29,7 +30,7 @@ fun ClientWindow(
     clientViewModel: ClientViewModel,
     exitApplication: () -> Unit,
 ) {
-    var alignmentState by remember { mutableStateOf(Alignment.CenterStart) }
+    var alignmentState by remember { mutableStateOf(Alignment.Center) }
     var confirmCloseApplication by remember { mutableStateOf(false) }
 
     Window(
@@ -42,13 +43,11 @@ fun ClientWindow(
         undecorated = true,
         state = WindowState(
             position = WindowPosition(alignmentState),
-            placement = if (alignmentState == Alignment.TopCenter) WindowPlacement.Fullscreen else WindowPlacement.Floating,
+            placement = if (alignmentState == Alignment.TopCenter) WindowPlacement.Maximized else WindowPlacement.Floating,
             size = if (alignmentState == Alignment.TopCenter) {
-                val (width, height) = screenDimensions()
-                DpSize(width.dp, height.dp)
+                screenDimensions().toDpSize()
             } else {
-                val (width, height) = screenDimensions(0.7f, 0.5f)
-                DpSize(width.dp, height.dp)
+                screenDimensions(0.7f, 0.8f).toDpSize()
             }
         ),
         onPreviewKeyEvent = { keyEvent ->
@@ -97,7 +96,8 @@ fun ClientWindow(
                         confirmCloseApplication = shouldDismiss
                     },
                     exitApplication = {
-                       exitApplication()
+                        clientViewModel.killServer()
+                        exitApplication()
                     }
                 )
             }

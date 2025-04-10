@@ -3,41 +3,52 @@ package org.robsonribeiro.ppd.viewmodel
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.json.Json
 import org.robsonribeiro.ppd.komms.*
 import org.robsonribeiro.ppd.komms.model.ChatMessagePayload
 import org.robsonribeiro.ppd.komms.model.KommData
+import org.robsonribeiro.ppd.komms.model.decodeJson
 import org.robsonribeiro.ppd.model.ChatMessage
 import org.robsonribeiro.ppd.model.TypeMessage
 
-class ClientViewModel(
-    startServer: Boolean,
-    private val clientId: String
-): ViewModel() {
+class ClientViewModel : ViewModel() {
 
-    private val server = KommServerSocket(SERVER_HOSTNAME, SERVER_PORT)
+    private var serverSocket: KommServerSocket? = null
     private var clientSocket: KommClientSocket? = null
+
+    private var host: String? = null
+    private var port: Int? = null
+    private var clientId: String? = null
+
+    private val _serverState = MutableStateFlow<Pair<Boolean, String?>>(false to null)
+    val serverState = _serverState.asStateFlow()
+
+    private val _clientState = MutableStateFlow<Pair<Boolean, String?>>(false to null)
+    val clientState = _clientState.asStateFlow()
 
     private val _chatlogs = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatlogs = _chatlogs.asStateFlow()
 
-
-    init {
-        if (startServer) {
-            server.start()
-        }
-        Thread.sleep(1000)
-        registerClient(clientId)
-    }
+    private val _chatIsEnabled = MutableStateFlow(false)
+    val chatIsEnabled = _chatIsEnabled.asStateFlow()
 
     fun startServer(host: String, port: Int) {
+        serverSocket = KommServerSocket(host, port)
+        serverSocket?.start()
+        _serverState.value = true to "$host:$port"
+        this.host = host
+        this.port = port
+    }
 
+    fun killServer(){
+        _serverState.value = false to null
+        _clientState.value = false to null
+        serverSocket?.killServer()
     }
 
     fun registerClient(clientId: String) {
-        clientSocket = KommClientSocket(SERVER_HOSTNAME, SERVER_PORT)
+        clientSocket = KommClientSocket(host!!, port!!)
         clientSocket?.handshake(clientId) { json ->
-            val receivedKommData = Json.decodeFromString<KommData>(json)
+            val receivedKommData = json.decodeJson()
             when(val payload = receivedKommData.data) {
                 is ChatMessagePayload -> {
                     _chatlogs.value += ChatMessage(
@@ -51,6 +62,9 @@ class ClientViewModel(
                 }
             }
         }
+        _clientState.value = true to clientId
+        _chatIsEnabled.value = true
+        this.clientId = clientId
     }
 
     fun sendMessage(message: String) {

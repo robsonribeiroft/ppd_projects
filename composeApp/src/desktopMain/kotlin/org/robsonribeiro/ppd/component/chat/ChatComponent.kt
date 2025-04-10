@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import jdk.jfr.Enabled
 import org.robsonribeiro.ppd.model.ChatMessage
 import org.robsonribeiro.ppd.values.ColorResources
 import org.robsonribeiro.ppd.values.Padding
@@ -19,6 +20,7 @@ import org.robsonribeiro.ppd.values.TextSize
 @Composable
 fun ChatComponent(
     modifier: Modifier,
+    chatIsEnabled: Boolean,
     messages: List<ChatMessage>,
     sendMessage: (String)->Unit
 ) {
@@ -30,7 +32,8 @@ fun ChatComponent(
         )
         ChatTextFieldComponent(
             modifier = Modifier.fillMaxWidth(),
-            onSend = sendMessage
+            onSend = sendMessage,
+            isEnabled = chatIsEnabled
         )
     }
 }

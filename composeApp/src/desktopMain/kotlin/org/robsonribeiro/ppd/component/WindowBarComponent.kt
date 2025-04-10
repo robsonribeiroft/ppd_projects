@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -34,6 +35,7 @@ fun WindowBarComponent(
     titleColor: Color = ColorResources.White,
     iconColor: Color = ColorResources.White,
     barColor: Color = ColorResources.BlackRich.copy(alpha = 0.5f),
+    barGradientColors: List<Color>? = null,
     modifier: Modifier = Modifier,
     onMinimize: (()-> Unit)? = null,
     onExitWindow: ()-> Unit,
@@ -45,7 +47,11 @@ fun WindowBarComponent(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(barColor),
+            .background(
+                brush = Brush.linearGradient(
+                    colors = if (barGradientColors.isNullOrEmpty()) listOf(barColor, barColor) else barGradientColors
+                )
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {

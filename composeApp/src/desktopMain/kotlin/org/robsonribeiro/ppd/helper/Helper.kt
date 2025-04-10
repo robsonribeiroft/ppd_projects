@@ -2,8 +2,9 @@ package org.robsonribeiro.ppd.helper
 
 import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
-import org.jetbrains.skia.FontWeight
 import org.robsonribeiro.ppd.component.WindowBarComponent
 import java.awt.GraphicsEnvironment
 
@@ -33,3 +34,5 @@ fun screenDimensions(
     val height = (displayMode.height*verticalWeight).toInt() - verticalPadding
     return width to height
 }
+
+fun Pair<Int, Int>.toDpSize() = DpSize(first.dp, second.dp)

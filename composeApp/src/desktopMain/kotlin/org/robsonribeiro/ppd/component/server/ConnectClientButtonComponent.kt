@@ -1,6 +1,5 @@
 package org.robsonribeiro.ppd.component.server
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,13 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import org.jetbrains.compose.resources.vectorResource
-import org.robsonribeiro.ppd.values.*
-import org.robsonribeiro.ppd.values.StringResources.SERVER_BUTTON_CLICK_SETUP
-import org.robsonribeiro.ppd.values.StringResources.SERVER_BUTTON_SERVER_DISABLED
-import org.robsonribeiro.ppd.values.StringResources.SERVER_BUTTON_SERVER_RUNNING
+import org.robsonribeiro.ppd.model.ClientState
+import org.robsonribeiro.ppd.values.ColorResources
+import org.robsonribeiro.ppd.values.Padding
+import org.robsonribeiro.ppd.values.empty
 import ppd.composeapp.generated.resources.Res
 import ppd.composeapp.generated.resources.ic_server_host
 
@@ -36,7 +34,7 @@ private const val BUTTON_CLICK_SETUP = "Click here to setup"
 @Composable
 fun ConnectClientButtonComponent(
     modifier: Modifier = Modifier,
-    clientIsConnected: Pair<Boolean, String?> = false to null,
+    clientState: ClientState,
     onClick: ()->Unit
 ) {
 
@@ -52,7 +50,7 @@ fun ConnectClientButtonComponent(
             }
             .border(
                 width = Padding.tiny,
-                color = if (clientIsConnected.first) ColorResources.BlueCeltic else Color.Transparent,
+                color = if (clientState.isConnected) ColorResources.GreenEmerald else Color.Transparent,
                 shape = RoundedCornerShape(Padding.regular)
             ),
         elevation = if (isHoveringOver) Padding.large else Padding.tiny,
@@ -72,32 +70,19 @@ fun ConnectClientButtonComponent(
                 tint = ColorResources.BlackRich,
             )
             Column {
-                if (!clientIsConnected.first) {
+                if (!clientState.isConnected) {
                     Text(
                         text = BUTTON_TITLE_CONNECT_CLIENT,
-                        style = TextStyle(
-                            color = ColorResources.BlackRich,
-                            fontSize = TextSize.small,
-                            fontWeight = FontWeight.SemiBold,
-                            lineHeight = TextSize.large
-                        )
+                        style = MaterialTheme.typography.body1
                     )
                     Text(
                         text = BUTTON_CLICK_SETUP,
-                        style = TextStyle(
-                            color = ColorResources.BlackRich,
-                            fontSize = TextSize.tiny,
-                            fontWeight = FontWeight.W400
-                        )
+                        style = MaterialTheme.typography.body2
                     )
                 } else {
                     Text(
-                        text =  "You join as ${clientIsConnected.second}",
-                        style = TextStyle(
-                            color = ColorResources.BlackRich,
-                            fontSize = TextSize.small,
-                            fontWeight = FontWeight.W400
-                        )
+                        text =  "You join as ${clientState.clientId}",
+                        style = MaterialTheme.typography.body1
                     )
                 }
             }

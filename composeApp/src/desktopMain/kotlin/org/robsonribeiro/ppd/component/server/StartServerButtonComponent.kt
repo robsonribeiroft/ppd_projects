@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,13 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import org.jetbrains.compose.resources.vectorResource
-import org.robsonribeiro.ppd.values.*
+import org.robsonribeiro.ppd.model.ServerState
+import org.robsonribeiro.ppd.values.ColorResources
+import org.robsonribeiro.ppd.values.Padding
 import org.robsonribeiro.ppd.values.StringResources.SERVER_BUTTON_CLICK_SETUP
 import org.robsonribeiro.ppd.values.StringResources.SERVER_BUTTON_SERVER_DISABLED
 import org.robsonribeiro.ppd.values.StringResources.SERVER_BUTTON_SERVER_RUNNING
+import org.robsonribeiro.ppd.values.empty
 import ppd.composeapp.generated.resources.Res
 import ppd.composeapp.generated.resources.ic_server_host
 
@@ -33,7 +35,7 @@ import ppd.composeapp.generated.resources.ic_server_host
 @Composable
 fun StartServerButtonComponent(
     modifier: Modifier = Modifier,
-    serverIsRunning: Pair<Boolean, String?> = false to null,
+    serverState: ServerState,
     onClick: ()->Unit
 ) {
 
@@ -58,7 +60,7 @@ fun StartServerButtonComponent(
             }
             .border(
                 width = Padding.tiny,
-                color = if (serverIsRunning.first) animatedColor else Color.Transparent,
+                color = if (serverState.isRunning) animatedColor else Color.Transparent,
                 shape = RoundedCornerShape(Padding.regular)
             ),
         elevation = if (isHoveringOver) Padding.large else Padding.tiny,
@@ -79,21 +81,12 @@ fun StartServerButtonComponent(
             )
             Column {
                 Text(
-                    text = if (serverIsRunning.first) SERVER_BUTTON_SERVER_RUNNING else SERVER_BUTTON_SERVER_DISABLED,
-                    style = TextStyle(
-                        color = ColorResources.BlackRich,
-                        fontSize = TextSize.small,
-                        fontWeight = FontWeight.SemiBold,
-                        lineHeight = TextSize.large
-                    )
+                    text = if (serverState.isRunning) SERVER_BUTTON_SERVER_RUNNING else SERVER_BUTTON_SERVER_DISABLED,
+                    style = MaterialTheme.typography.body1
                 )
                 Text(
-                    text = if (serverIsRunning.first) "${serverIsRunning.second}" else SERVER_BUTTON_CLICK_SETUP,
-                    style = TextStyle(
-                        color = ColorResources.BlackRich,
-                        fontSize = TextSize.tiny,
-                        fontWeight = FontWeight.W400
-                    )
+                    text = if (serverState.isRunning) "${serverState.host}:${serverState.port}" else SERVER_BUTTON_CLICK_SETUP,
+                    style = MaterialTheme.typography.body2
                 )
             }
         }

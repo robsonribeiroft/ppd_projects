@@ -47,7 +47,7 @@ fun ClientWindow(
             size = if (alignmentState == Alignment.TopCenter) {
                 screenDimensions().toDpSize()
             } else {
-                screenDimensions(0.7f, 0.8f).toDpSize()
+                screenDimensions(0.8f, 0.6f).toDpSize()
             }
         ),
         onPreviewKeyEvent = { keyEvent ->

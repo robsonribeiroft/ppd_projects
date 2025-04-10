@@ -26,7 +26,6 @@ fun ClientContentWindow(
 
     val serverState by clientViewModel.serverState.collectAsState()
     val clientState by clientViewModel.clientState.collectAsState()
-    val chatIsEnabled by clientViewModel.chatIsEnabled.collectAsState()
 
     var showConnectToServerDialog by remember { mutableStateOf(false) }
     var showJoinClientToServerDialog by remember { mutableStateOf(false) }
@@ -52,7 +51,7 @@ fun ClientContentWindow(
                     ChatComponent(
                         Modifier,
                         messages = chatlogs,
-                        chatIsEnabled = chatIsEnabled
+                        chatIsEnabled = clientViewModel.chatIsEnabled()
                     ) { sendMessage ->
                         clientViewModel.sendMessage(sendMessage)
                     }
@@ -73,15 +72,15 @@ fun ClientContentWindow(
                         ) {
                             Column (
                                 modifier = Modifier
-                                    .fillMaxWidth()
+                                    .fillMaxSize()
                                     .padding(Padding.regular),
-                                verticalArrangement = Arrangement.spacedBy(Padding.small)
+                                verticalArrangement = Arrangement.spacedBy(Padding.regular)
                             ) {
                                 StartServerButtonComponent(
                                     modifier = Modifier.fillMaxWidth(),
-                                    serverIsRunning = serverState
+                                    serverState = serverState
                                 ) {
-                                    if (serverState.first) {
+                                    if (serverState.isRunning) {
                                         clientViewModel.killServer()
                                     } else {
                                         showConnectToServerDialog = true
@@ -89,9 +88,9 @@ fun ClientContentWindow(
                                 }
                                 ConnectClientButtonComponent(
                                     modifier = Modifier.fillMaxWidth(),
-                                    clientIsConnected = clientState
+                                    clientState = clientState
                                 ) {
-                                    if (serverState.first) {
+                                    if (serverState.isRunning) {
                                         showJoinClientToServerDialog = true
                                     } else {
                                         showInfoDialog =
@@ -138,8 +137,8 @@ fun ClientContentWindow(
                     showJoinClientToServerDialog = false
                 },
                 onConnect = { clientId ->
-                    clientViewModel.registerClient(clientId)
                     showJoinClientToServerDialog = false
+                    clientViewModel.registerClient(clientId)
                 }
             )
         }

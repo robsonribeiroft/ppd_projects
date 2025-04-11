@@ -8,60 +8,80 @@ import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import org.jetbrains.compose.resources.painterResource
 import org.robsonribeiro.ppd.component.WindowBarComponent
-import org.robsonribeiro.ppd.dialog.ExitApplicationDialog
+import org.robsonribeiro.ppd.dialog.ConfirmationDialog
 import org.robsonribeiro.ppd.helper.screenDimensions
 import org.robsonribeiro.ppd.helper.toDpSize
+import org.robsonribeiro.ppd.model.ConfirmationDialogInfo
 import org.robsonribeiro.ppd.values.StringResources
 import org.robsonribeiro.ppd.values.empty
-import org.robsonribeiro.ppd.viewmodel.ClientViewModel
+import org.robsonribeiro.ppd.viewmodel.MainViewModel
 import ppd.composeapp.generated.resources.Res
 import ppd.composeapp.generated.resources.background_noise
 import ppd.composeapp.generated.resources.ic_game_joystick
 
 @Composable
 fun ClientWindow(
-    clientViewModel: ClientViewModel,
+    mainViewModel: MainViewModel,
     exitApplication: () -> Unit,
 ) {
-    var alignmentState by remember { mutableStateOf(Alignment.Center) }
-    var confirmCloseApplication by remember { mutableStateOf(false) }
+    var windowState by remember {
+        mutableStateOf(
+            WindowState(
+                position = WindowPosition(Alignment.Center),
+                placement = WindowPlacement.Floating,
+                size = screenDimensions(verticalWeight = 0.8f, horizontalWeight = 0.5f).toDpSize()
+            )
+        )
+    }
+
+    var showConfirmationDialog by remember { mutableStateOf<ConfirmationDialogInfo?>(null) }
 
     Window(
         onCloseRequest = {
-            confirmCloseApplication = true
+            showConfirmationDialog = ConfirmationDialogInfo(
+                title = "Quit Application",
+                description = "Close this windows will make your opponent win\nAre you sure to quit?"
+            ) {
+                mainViewModel.leaveServer()
+                exitApplication()
+            }
         },
         title = StringResources.APPLICATION_NAME,
         icon = painterResource(Res.drawable.ic_game_joystick),
         resizable = true,
         undecorated = true,
-        state = WindowState(
-            position = WindowPosition(alignmentState),
-            placement = if (alignmentState == Alignment.TopCenter) WindowPlacement.Maximized else WindowPlacement.Floating,
-            size = if (alignmentState == Alignment.TopCenter) {
-                screenDimensions().toDpSize()
-            } else {
-                screenDimensions(0.8f, 0.6f).toDpSize()
-            }
-        ),
+        state = windowState,
         onPreviewKeyEvent = { keyEvent ->
             when {
                 keyEvent.isCtrlPressed && keyEvent.key == Key.DirectionLeft -> {
-                    alignmentState = Alignment.CenterStart
+                    windowState = WindowState(
+                        position = WindowPosition(Alignment.CenterStart),
+                        placement = WindowPlacement.Floating,
+                        size = screenDimensions(verticalWeight = 0.8f, horizontalWeight = 0.5f).toDpSize()
+                    )
                     return@Window true
                 }
                 keyEvent.isCtrlPressed && keyEvent.key == Key.DirectionRight -> {
-                    alignmentState = Alignment.CenterEnd
+                    windowState = WindowState(
+                        position = WindowPosition(Alignment.CenterEnd),
+                        placement = WindowPlacement.Floating,
+                        size = screenDimensions(verticalWeight = 0.8f, horizontalWeight = 0.5f).toDpSize()
+                    )
                     return@Window true
                 }
                 keyEvent.isCtrlPressed && keyEvent.key == Key.F -> {
-                    alignmentState = Alignment.TopCenter
+                    windowState = WindowState(
+                        position = WindowPosition(Alignment.Center),
+                        placement = WindowPlacement.Maximized,
+                        size = screenDimensions().toDpSize()
+                    )
                     return@Window true
                 }
                 else -> false
@@ -83,23 +103,23 @@ fun ClientWindow(
                 modifier = Modifier.fillMaxSize()
             ) {
                 windowTitleBar {
-                    confirmCloseApplication = true
-                }
-                ClientContentWindow(clientViewModel) {
-                    exitApplication()
-                }
-            }
-
-            if (confirmCloseApplication) {
-                ExitApplicationDialog(
-                    onDismiss = { shouldDismiss ->
-                        confirmCloseApplication = shouldDismiss
-                    },
-                    exitApplication = {
-                        clientViewModel.killServer()
+                    showConfirmationDialog = ConfirmationDialogInfo(
+                        title = "Quit Application",
+                        description = "Close this windows will make your opponent win\nAre you sure to quit?"
+                    ) {
+                        mainViewModel.leaveServer()
                         exitApplication()
                     }
-                )
+                }
+                ClientContentWindow(mainViewModel)
+            }
+
+            showConfirmationDialog?.let {
+                ConfirmationDialog(
+                    content = showConfirmationDialog!!
+                ) {
+                    showConfirmationDialog = null
+                }
             }
         }
     }

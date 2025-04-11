@@ -24,6 +24,7 @@ import org.robsonribeiro.ppd.values.ColorResources
 import org.robsonribeiro.ppd.values.Padding
 import org.robsonribeiro.ppd.values.empty
 import ppd.composeapp.generated.resources.Res
+import ppd.composeapp.generated.resources.ic_add_user
 import ppd.composeapp.generated.resources.ic_server_host
 
 
@@ -65,7 +66,7 @@ fun ConnectClientButtonComponent(
             horizontalArrangement = Arrangement.spacedBy(Padding.regular)
         ) {
             Icon(
-                imageVector = vectorResource(Res.drawable.ic_server_host),
+                imageVector = vectorResource(Res.drawable.ic_add_user),
                 contentDescription = String.empty,
                 tint = ColorResources.BlackRich,
             )

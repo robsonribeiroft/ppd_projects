@@ -7,31 +7,33 @@ import androidx.compose.ui.Modifier
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.robsonribeiro.ppd.component.BentoComponent
 import org.robsonribeiro.ppd.component.chat.ChatComponent
-import org.robsonribeiro.ppd.component.game.GameBoard
+import org.robsonribeiro.ppd.component.game.SeegaBoardComponent
 import org.robsonribeiro.ppd.component.server.ConnectClientButtonComponent
 import org.robsonribeiro.ppd.component.server.StartServerButtonComponent
+import org.robsonribeiro.ppd.dialog.ConfirmationDialog
 import org.robsonribeiro.ppd.dialog.ConnectToServerDialog
 import org.robsonribeiro.ppd.dialog.InfoDialog
 import org.robsonribeiro.ppd.dialog.JoinClientToServerDialog
+import org.robsonribeiro.ppd.model.ConfirmationDialogInfo
 import org.robsonribeiro.ppd.values.Padding
 import org.robsonribeiro.ppd.values.StringResources
-import org.robsonribeiro.ppd.viewmodel.ClientViewModel
+import org.robsonribeiro.ppd.viewmodel.MainViewModel
 
 @Composable
 @Preview
 fun ClientContentWindow(
-    clientViewModel: ClientViewModel,
-    onExitApplication: ()->Unit
+    viewModel: MainViewModel
 ) {
 
-    val serverState by clientViewModel.serverState.collectAsState()
-    val clientState by clientViewModel.clientState.collectAsState()
+    val serverState by viewModel.serverState.collectAsState()
+    val clientState by viewModel.clientState.collectAsState()
+    val chatlogs by viewModel.chatlogs.collectAsState()
+    val gameState by viewModel.gameState.collectAsState()
 
     var showConnectToServerDialog by remember { mutableStateOf(false) }
     var showJoinClientToServerDialog by remember { mutableStateOf(false) }
     var showInfoDialog by remember { mutableStateOf<Pair<String, String>?>(null) }
-
-    val chatlogs by clientViewModel.chatlogs.collectAsState()
+    var showConfirmationDialog by remember { mutableStateOf<ConfirmationDialogInfo?>(null) }
 
     MaterialTheme {
         Column(
@@ -51,17 +53,26 @@ fun ClientContentWindow(
                     ChatComponent(
                         Modifier,
                         messages = chatlogs,
-                        chatIsEnabled = clientViewModel.chatIsEnabled()
-                    ) { sendMessage ->
-                        clientViewModel.sendMessage(sendMessage)
-                    }
+                        chatIsEnabled = viewModel.chatIsEnabled(),
+                        sendMessage = viewModel::sendMessage
+                    )
                 }
                 Column (
                     Modifier.weight(2f),
                     verticalArrangement = Arrangement.spacedBy(Padding.large)
                 ) {
-                    BentoComponent(Modifier.weight(8f)) {
-                        GameBoard(Modifier.fillMaxSize())
+                    BentoComponent(
+                        Modifier
+                            .weight(8f)
+                            .padding(Padding.regular)
+                    ) {
+                        SeegaBoardComponent(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(Padding.large),
+                            gameState = gameState,
+                            onCellClick = viewModel::onBoardCellClick
+                        )
                     }
                     Row(
                         modifier = Modifier.weight(2f),
@@ -81,7 +92,12 @@ fun ClientContentWindow(
                                     serverState = serverState
                                 ) {
                                     if (serverState.isRunning) {
-                                        clientViewModel.killServer()
+                                        showConfirmationDialog = ConfirmationDialogInfo(
+                                            title = "Kill Server",
+                                            description = "Are you sure that you want to finish server process?",
+                                        ) {
+                                            viewModel.killServer()
+                                        }
                                     } else {
                                         showConnectToServerDialog = true
                                     }
@@ -124,7 +140,7 @@ fun ClientContentWindow(
                     showConnectToServerDialog = false
                 },
                 onConnect = { host, port ->
-                    clientViewModel.startServer(host, port)
+                    viewModel.startServer(host, port)
                     showConnectToServerDialog = false
                 }
             )
@@ -138,16 +154,24 @@ fun ClientContentWindow(
                 },
                 onConnect = { clientId ->
                     showJoinClientToServerDialog = false
-                    clientViewModel.registerClient(clientId)
+                    viewModel.registerClient(clientId)
                 }
             )
         }
 
-        if (showInfoDialog != null) {
+        showInfoDialog?.let {
             InfoDialog(
-                content = showInfoDialog
+                content = it
             ) {
                 showInfoDialog = null
+            }
+        }
+
+        showConfirmationDialog?.let {
+            ConfirmationDialog(
+                content = it
+            ) {
+                showConfirmationDialog = null
             }
         }
     }

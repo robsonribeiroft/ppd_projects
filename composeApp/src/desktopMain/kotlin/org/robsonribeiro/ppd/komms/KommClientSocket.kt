@@ -11,6 +11,10 @@ import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.Socket
 
+object Command{
+    const val LEAVE_SERVER = "/quit"
+}
+
 class KommClientSocket(
     private val serverAddress: String = SERVER_HOSTNAME,
     private val port: Int = SERVER_PORT

@@ -7,7 +7,9 @@ import androidx.compose.ui.Modifier
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.robsonribeiro.ppd.component.BentoComponent
 import org.robsonribeiro.ppd.component.chat.ChatComponent
+import org.robsonribeiro.ppd.component.game.GameResultInfoComponent
 import org.robsonribeiro.ppd.component.game.SeegaBoardComponent
+import org.robsonribeiro.ppd.component.game.WaitingPlayersComponent
 import org.robsonribeiro.ppd.component.server.ConnectClientButtonComponent
 import org.robsonribeiro.ppd.component.server.StartServerButtonComponent
 import org.robsonribeiro.ppd.dialog.ConfirmationDialog
@@ -29,6 +31,7 @@ fun ClientContentWindow(
     val clientState by viewModel.clientState.collectAsState()
     val chatlogs by viewModel.chatlogs.collectAsState()
     val gameState by viewModel.gameState.collectAsState()
+    var count by remember { mutableIntStateOf(0) }
 
     var showConnectToServerDialog by remember { mutableStateOf(false) }
     var showJoinClientToServerDialog by remember { mutableStateOf(false) }
@@ -66,13 +69,20 @@ fun ClientContentWindow(
                             .weight(8f)
                             .padding(Padding.regular)
                     ) {
-                        SeegaBoardComponent(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(Padding.large),
-                            gameState = gameState,
-                            onCellClick = viewModel::onBoardCellClick
+                        WaitingPlayersComponent(
+                            modifier = Modifier.fillMaxSize()
                         )
+//                        SeegaBoardComponent(
+//                            modifier = Modifier
+//                                .fillMaxSize()
+//                                .padding(Padding.large),
+//                            gameState = gameState,
+//                            onCellClick = viewModel::onBoardCellClick
+//                        )
+//                        GameResultInfoComponent(
+//                            modifier = Modifier,
+//                            winner = count%2==0
+//                        )
                     }
                     Row(
                         modifier = Modifier.weight(2f),

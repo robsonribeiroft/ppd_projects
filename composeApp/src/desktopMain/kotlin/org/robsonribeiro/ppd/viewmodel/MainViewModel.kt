@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.robsonribeiro.ppd.component.game.logic.*
+import org.robsonribeiro.ppd.helper.isServerLive
 import org.robsonribeiro.ppd.komms.*
 import org.robsonribeiro.ppd.komms.model.ChatMessagePayload
 import org.robsonribeiro.ppd.komms.model.KommData
@@ -37,8 +38,10 @@ class MainViewModel : ViewModel() {
     }
 
     fun startServer(host: String, port: Int) {
-        serverSocket = KommServerSocket(host, port)
-        serverSocket?.start()
+        if (!isServerLive(host, port)) {
+            serverSocket = KommServerSocket(host, port)
+            serverSocket?.start()
+        }
         _serverState.value = ServerState(
             host = host,
             port = port,

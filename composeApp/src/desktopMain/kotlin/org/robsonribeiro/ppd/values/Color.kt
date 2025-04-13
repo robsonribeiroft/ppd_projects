@@ -22,4 +22,40 @@ object ColorResources {
         BlueRoyalDarker, BlueRoyalDarker,
         BlackRich, BlackRich
     )
+
+//    val defeat_gradient = listOf(
+//        RedPantone.darken(1.6f), RedPantone.darken(1.3f),
+//        RedPantone, RedPantone.darken(0.9f),
+//        RedPantone.darken(0.6f), RedPantone.darken(0.3f)
+//    )
+
+    val defeat_gradient = listOf(
+        RedPantone.darken(1.3f),
+        RedPantone,
+        RedPantone.darken(0.3f)
+    )
+
+    val win_gradient = listOf(
+        BlueCeltic.darken(1.3f),
+        BlueCeltic,
+        BlueCeltic.darken(0.3f)
+    )
+
+
+}
+
+fun Color.darken(darkFactor: Float): Color {
+
+    val clampedFactor = darkFactor.coerceIn(0.0f, 1.0f)
+
+    val newRed = this.red * darkFactor
+    val newGreen = this.green * darkFactor
+    val newBlue = this.blue * darkFactor
+
+    return Color(
+        red = newRed,
+        green = newGreen,
+        blue = newBlue,
+        alpha = this.alpha
+    )
 }

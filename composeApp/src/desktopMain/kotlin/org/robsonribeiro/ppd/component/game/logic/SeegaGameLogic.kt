@@ -1,10 +1,17 @@
 package org.robsonribeiro.ppd.component.game.logic
 
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.robsonribeiro.ppd.values.ColorResources
 
 typealias SeegaBoard = List<List<PlayerPiece?>>
 
-enum class PlayerPiece { PLAYER_ONE, PLAYER_TWO }
+enum class PlayerPiece(
+    val color: Color
+) {
+    PLAYER_ONE(ColorResources.RedPantone),
+    PLAYER_TWO(ColorResources.BlueRoyal)
+}
 
 enum class GameAction {
     PLACE_PIECE, REMOVE_PIECE

@@ -34,9 +34,9 @@ fun ClientWindow(
     var windowState by remember {
         mutableStateOf(
             WindowState(
-                position = WindowPosition(Alignment.Center),
+                position = WindowPosition(Alignment.TopCenter),
                 placement = WindowPlacement.Floating,
-                size = screenDimensions(verticalWeight = 0.8f, horizontalWeight = 0.5f).toDpSize()
+                size = screenDimensions(verticalWeight = 1f, horizontalWeight = 0.5f).toDpSize()
             )
         )
     }
@@ -62,23 +62,23 @@ fun ClientWindow(
             when {
                 keyEvent.isCtrlPressed && keyEvent.key == Key.DirectionLeft -> {
                     windowState = WindowState(
-                        position = WindowPosition(Alignment.CenterStart),
+                        position = WindowPosition(Alignment.TopStart),
                         placement = WindowPlacement.Floating,
-                        size = screenDimensions(verticalWeight = 0.8f, horizontalWeight = 0.5f).toDpSize()
+                        size = screenDimensions(horizontalWeight = 0.5f).toDpSize()
                     )
                     return@Window true
                 }
                 keyEvent.isCtrlPressed && keyEvent.key == Key.DirectionRight -> {
                     windowState = WindowState(
-                        position = WindowPosition(Alignment.CenterEnd),
+                        position = WindowPosition(Alignment.TopEnd),
                         placement = WindowPlacement.Floating,
-                        size = screenDimensions(verticalWeight = 0.8f, horizontalWeight = 0.5f).toDpSize()
+                        size = screenDimensions(horizontalWeight = 0.5f).toDpSize()
                     )
                     return@Window true
                 }
                 keyEvent.isCtrlPressed && keyEvent.key == Key.F -> {
                     windowState = WindowState(
-                        position = WindowPosition(Alignment.Center),
+                        position = WindowPosition(Alignment.TopCenter),
                         placement = WindowPlacement.Maximized,
                         size = screenDimensions().toDpSize()
                     )

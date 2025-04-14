@@ -12,7 +12,8 @@ import java.util.concurrent.Executors
 
 class KommServerSocket(
     private val host: String,
-    private val port: Int
+    private val port: Int,
+    private val requiredPlayers: Int
 ): Thread() {
 
     private lateinit var serverSocket: ServerSocket
@@ -47,14 +48,6 @@ class KommServerSocket(
 
     fun removeClient(clientHandler: ClientHandler) {
         clients.remove(clientHandler)
-        val user = clientHandler.clientId ?: "Opponent"
-        println("$user has left the server.")
-        val departureKommData = KommData(
-            user,
-            CHANNEL_CHAT_SYSTEM,
-            ChatMessagePayload("$user has left the server.")
-        )
-        broadcastMessage(senderId = user, message = departureKommData.toJson())
         if (clients.isEmpty()) {
             println("ApplicationServer has stopped")
             killServer()
@@ -78,13 +71,9 @@ class KommServerSocket(
         override fun run() {
             try {
                 clientId = input.readLine()
-                val welcomePayload = ChatMessagePayload("Welcome $clientId!")
-                val welcomeKommData = KommData(clientId!!, CHANNEL_CHAT_SYSTEM, welcomePayload)
-
-                val sayHelloPayload = ChatMessagePayload("say hello to $clientId who joined the server")
-                val sayHelloKommData = KommData(clientId!!, CHANNEL_CHAT_SYSTEM, sayHelloPayload)
-                output.println(welcomeKommData.toJson())
-                broadcastMessage(senderId = clientId!!, sayHelloKommData.toJson())
+                sendClientWelcomeMessage(clientId!!)
+                notifyPartyClientHasJoinedTheServer(clientId!!)
+                sendClientAmountPlayer(clientId!!, server.clients.size)
 
                 var message: String?
                 while (true) {
@@ -93,6 +82,7 @@ class KommServerSocket(
                     when(val payload = receivedKommData.data) {
                         is CommandPayload -> {
                             if (payload.command == COMMAND_QUIT) {
+                                notifyPartyClientHasLeftTheServer(clientId!!)
                                 break
                             }
                         }
@@ -117,6 +107,33 @@ class KommServerSocket(
                 removeClient(clientHandler = this)
             }
 
+        }
+
+        private fun sendClientAmountPlayer(clientId: String, numberOfClients: Int) {
+            val kommData = KommData(clientId, CHANNEL_GAME, PlayersConnectedPayload(numberOfClients))
+            output.println(kommData.toJson())
+        }
+
+        private fun sendClientWelcomeMessage(clientId: String) {
+            val kommData = KommData(clientId, CHANNEL_CHAT_SYSTEM, ChatMessagePayload("Welcome $clientId!"))
+            output.println(kommData.toJson())
+        }
+
+        private fun notifyPartyClientHasLeftTheServer(clientId: String) {
+            val message = "$clientId has left the server."
+            println(message)
+            val kommData = KommData(
+                clientId,
+                CHANNEL_CHAT_SYSTEM,
+                ChatMessagePayload(message)
+            )
+            broadcastMessage(senderId = clientId, message = kommData.toJson())
+        }
+
+        private fun notifyPartyClientHasJoinedTheServer(clientId: String) {
+            val sayHelloPayload = ChatMessagePayload("say hello to $clientId who joined the server")
+            val sayHelloKommData = KommData(clientId, CHANNEL_CHAT_SYSTEM, sayHelloPayload)
+            broadcastMessage(senderId = clientId, sayHelloKommData.toJson())
         }
     }
 }

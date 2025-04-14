@@ -9,7 +9,9 @@ import org.robsonribeiro.ppd.component.BentoComponent
 import org.robsonribeiro.ppd.component.chat.ChatComponent
 import org.robsonribeiro.ppd.component.game.GameResultInfoComponent
 import org.robsonribeiro.ppd.component.game.SeegaBoardComponent
+import org.robsonribeiro.ppd.component.game.SortPieceComponent
 import org.robsonribeiro.ppd.component.game.WaitingPlayersComponent
+import org.robsonribeiro.ppd.component.game.logic.ApplicationState
 import org.robsonribeiro.ppd.component.server.ConnectClientButtonComponent
 import org.robsonribeiro.ppd.component.server.StartServerButtonComponent
 import org.robsonribeiro.ppd.dialog.ConfirmationDialog
@@ -27,11 +29,11 @@ fun ClientContentWindow(
     viewModel: MainViewModel
 ) {
 
+    val applicationState by viewModel.applicationState.collectAsState()
     val serverState by viewModel.serverState.collectAsState()
     val clientState by viewModel.clientState.collectAsState()
     val chatlogs by viewModel.chatlogs.collectAsState()
     val gameState by viewModel.gameState.collectAsState()
-    var count by remember { mutableIntStateOf(0) }
 
     var showConnectToServerDialog by remember { mutableStateOf(false) }
     var showJoinClientToServerDialog by remember { mutableStateOf(false) }
@@ -67,22 +69,37 @@ fun ClientContentWindow(
                     BentoComponent(
                         Modifier
                             .weight(8f)
-                            .padding(Padding.regular)
                     ) {
-                        WaitingPlayersComponent(
-                            modifier = Modifier.fillMaxSize()
-                        )
-//                        SeegaBoardComponent(
-//                            modifier = Modifier
-//                                .fillMaxSize()
-//                                .padding(Padding.large),
-//                            gameState = gameState,
-//                            onCellClick = viewModel::onBoardCellClick
-//                        )
-//                        GameResultInfoComponent(
-//                            modifier = Modifier,
-//                            winner = count%2==0
-//                        )
+                        when (applicationState) {
+                            ApplicationState.WAITING_PLAYERS -> {
+                                WaitingPlayersComponent(
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            ApplicationState.GET_PIECE -> {
+                                SortPieceComponent(
+                                    modifier = Modifier,
+                                    gameState.playerPiece
+                                ) {
+                                    viewModel.showSeegaBoard()
+                                }
+                            }
+                            ApplicationState.READY_TO_PLAY -> {
+                                SeegaBoardComponent(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(Padding.large),
+                                    gameState = gameState,
+                                    onCellClick = viewModel::onBoardCellClick
+                                )
+                                if (false) {
+                                    GameResultInfoComponent(
+                                        modifier = Modifier,
+                                        winner = true
+                                    )
+                                }
+                            }
+                        }
                     }
                     Row(
                         modifier = Modifier.weight(2f),
@@ -98,7 +115,7 @@ fun ClientContentWindow(
                                 verticalArrangement = Arrangement.spacedBy(Padding.regular)
                             ) {
                                 StartServerButtonComponent(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.weight(1f).fillMaxWidth(),
                                     serverState = serverState
                                 ) {
                                     if (serverState.isRunning) {
@@ -113,7 +130,7 @@ fun ClientContentWindow(
                                     }
                                 }
                                 ConnectClientButtonComponent(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.weight(1f).fillMaxWidth(),
                                     clientState = clientState
                                 ) {
                                     if (serverState.isRunning) {

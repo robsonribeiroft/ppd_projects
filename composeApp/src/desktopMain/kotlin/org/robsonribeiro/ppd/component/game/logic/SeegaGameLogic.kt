@@ -3,6 +3,7 @@ package org.robsonribeiro.ppd.component.game.logic
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.robsonribeiro.ppd.values.ColorResources
+import kotlin.random.Random
 
 typealias SeegaBoard = List<List<PlayerPiece?>>
 
@@ -13,13 +14,23 @@ enum class PlayerPiece(
     PLAYER_TWO(ColorResources.BlueRoyal)
 }
 
+fun randomPlayerPiece(): PlayerPiece {
+    val pieces = PlayerPiece.entries
+    val randomIndex = Random.nextInt(pieces.size)
+    return pieces[randomIndex]
+}
+
+enum class ApplicationState {
+    WAITING_PLAYERS, GET_PIECE, READY_TO_PLAY
+}
+
 enum class GameAction {
     PLACE_PIECE, REMOVE_PIECE
 }
 
 data class GameState(
     val board: SeegaBoard = initialBoardState(),
-    val playerPiece: PlayerPiece? = PlayerPiece.PLAYER_ONE,
+    val playerPiece: PlayerPiece? = null,
     val gameAction: GameAction = GameAction.PLACE_PIECE
 )
 
@@ -32,6 +43,10 @@ fun MutableStateFlow<GameState>.handleOnClickGridCell(row: Int, column: Int) {
             value.handleRemovePieceOnGridCell(row, column)
         }
     }
+}
+
+fun MutableStateFlow<GameState>.setPlayerPiece(piece: PlayerPiece) {
+    value = value.copy(playerPiece = piece)
 }
 
 fun GameState.handlePlacementPieceOnGridCell(row: Int, column: Int): GameState {

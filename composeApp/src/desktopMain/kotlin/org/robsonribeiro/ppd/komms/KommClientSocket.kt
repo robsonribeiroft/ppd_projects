@@ -2,9 +2,8 @@ package org.robsonribeiro.ppd.komms
 
 import kotlinx.coroutines.Runnable
 import kotlinx.serialization.json.Json
-import org.robsonribeiro.ppd.komms.model.ChatMessagePayload
-import org.robsonribeiro.ppd.komms.model.CommandPayload
-import org.robsonribeiro.ppd.komms.model.KommData
+import org.robsonribeiro.ppd.component.game.logic.PlayerPiece
+import org.robsonribeiro.ppd.komms.model.*
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -65,8 +64,16 @@ class KommClientSocket(
             channel = CHANNEL_COMMAND,
             data = CommandPayload(command = actualCommand)
         )
-        val jsonString = Json.encodeToString(dataToSend)
-        sendJson(jsonString)
+        sendJson(dataToSend.toJson())
+    }
+
+    fun sendPlayerPiece(playerPiece: PlayerPiece) {
+        val pieceKommData = KommData(
+            clientId = clientId!!,
+            channel = CHANNEL_GAME,
+            data = PlayerPiecePayload(piece = playerPiece)
+        )
+        sendJson(pieceKommData.toJson())
     }
 
     private fun sendJson(json: String){

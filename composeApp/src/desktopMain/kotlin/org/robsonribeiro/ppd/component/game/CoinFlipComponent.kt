@@ -12,29 +12,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import org.robsonribeiro.ppd.component.game.logic.PlayerPiece
 import org.robsonribeiro.ppd.values.Padding
 
 @Composable
 fun CoinFlipComponent(
-    playerPiece: PlayerPiece = PlayerPiece.PLAYER_ONE,
+    playerPiece: PlayerPiece?,
     modifier: Modifier = Modifier,
     colorFront: Color = PlayerPiece.PLAYER_ONE.color,
     colorBack: Color = PlayerPiece.PLAYER_TWO.color,
-    animationDurationMillis: Int = 800
+    animationDurationMillis: Int = 1000
 ) {
 
     var targetRotation by remember { mutableStateOf(0f) }
-    val isInitialized = remember { mutableStateOf(false) }
 
     LaunchedEffect(playerPiece) {
-        if (isInitialized.value) {
-            // Trigger changed after initialization, start animation
-            targetRotation += 360f
-        } else {
-            // Mark as initialized after the first composition where triggerFlip is observed
-            isInitialized.value = true
-        }
+        delay(800)
+        targetRotation += 360f
     }
 
     val rotationAnim by animateFloatAsState(
@@ -78,13 +73,11 @@ fun CoinFlipComponent(
             .size(200.dp)
             .graphicsLayer {
                 rotationY = rotationAnim
-                cameraDistance = 8 * density // Keep perspective effect
+                cameraDistance = 8 * density
             }
             .clickable {
-                // Trigger the next 360-degree flip
-                targetRotation += 360f
+                targetRotation += 720f
             }
-            // Use the background color calculated in step 3, which now respects restingColor
             .background(
                 color = currentBgColor,
                 shape = RoundedCornerShape(Padding.regular)

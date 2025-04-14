@@ -6,9 +6,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import org.robsonribeiro.ppd.component.game.logic.*
 import org.robsonribeiro.ppd.helper.isServerLive
 import org.robsonribeiro.ppd.komms.*
-import org.robsonribeiro.ppd.komms.model.ChatMessagePayload
-import org.robsonribeiro.ppd.komms.model.KommData
-import org.robsonribeiro.ppd.komms.model.decodeJson
+import org.robsonribeiro.ppd.komms.model.*
 import org.robsonribeiro.ppd.model.ChatMessage
 import org.robsonribeiro.ppd.model.ClientState
 import org.robsonribeiro.ppd.model.ServerState
@@ -19,6 +17,10 @@ class MainViewModel : ViewModel() {
     private var serverSocket: KommServerSocket? = null
     private var clientSocket: KommClientSocket? = null
 
+    private val _applicationState = MutableStateFlow(ApplicationState.GET_PIECE)
+    val applicationState = _applicationState.asStateFlow()
+
+
     private val _serverState = MutableStateFlow(ServerState())
     val serverState = _serverState.asStateFlow()
 
@@ -28,7 +30,7 @@ class MainViewModel : ViewModel() {
     private val _chatlogs = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatlogs = _chatlogs.asStateFlow()
 
-    private val _gameState = MutableStateFlow<GameState>(GameState())
+    private val _gameState = MutableStateFlow<GameState>(GameState(playerPiece = PlayerPiece.PLAYER_TWO))
     val gameState = _gameState.asStateFlow()
 
     private val _chatIsEnabled = MutableStateFlow(false)
@@ -39,7 +41,7 @@ class MainViewModel : ViewModel() {
 
     fun startServer(host: String, port: Int) {
         if (!isServerLive(host, port)) {
-            serverSocket = KommServerSocket(host, port)
+            serverSocket = KommServerSocket(host, port, requiredPlayers = 2)
             serverSocket?.start()
         }
         _serverState.value = ServerState(
@@ -67,6 +69,16 @@ class MainViewModel : ViewModel() {
                         messageOwner = handleChatTypeMessage(receivedKommData)
                     )
                 }
+                is PlayerPiecePayload -> {
+                    println("PlayerPiecePayload: $receivedKommData")
+                    _applicationState.value = ApplicationState.GET_PIECE
+                    _gameState.setPlayerPiece(payload.piece)
+                }
+                is PlayersConnectedPayload -> {
+                    if (payload.amountOfPlayersConnected == 2) {
+                        allPlayerAreConnected()
+                    }
+                }
                 else -> {
 
                 }
@@ -88,7 +100,16 @@ class MainViewModel : ViewModel() {
         )
     }
 
-    private fun handleChatTypeMessage(kommData: KommData) : TypeMessage{
+    private fun allPlayerAreConnected() {
+        val playerPiece = randomPlayerPiece()
+        val opponentPiece = if (playerPiece == PlayerPiece.PLAYER_ONE) PlayerPiece.PLAYER_TWO else PlayerPiece.PLAYER_ONE
+        println("The ${_clientState.value.clientId} sorted the $playerPiece")
+        clientSocket?.sendPlayerPiece(opponentPiece)
+        _applicationState.value = ApplicationState.GET_PIECE
+        _gameState.setPlayerPiece(playerPiece)
+    }
+
+    private fun handleChatTypeMessage(kommData: KommData) : TypeMessage {
         if (kommData.channel == CHANNEL_CHAT_SYSTEM)
             return TypeMessage.SYSTEM
         return TypeMessage.FOREIGNER
@@ -100,5 +121,9 @@ class MainViewModel : ViewModel() {
 
     fun leaveServer() {
         clientSocket?.sendCommand(Command.LEAVE_SERVER)
+    }
+
+    fun showSeegaBoard() {
+        _applicationState.value = ApplicationState.READY_TO_PLAY
     }
 }

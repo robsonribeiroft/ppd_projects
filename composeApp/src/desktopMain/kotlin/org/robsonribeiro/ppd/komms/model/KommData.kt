@@ -3,6 +3,7 @@ package org.robsonribeiro.ppd.komms.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.robsonribeiro.ppd.component.game.logic.PlayerPiece
 
 @Serializable
 sealed interface MessagePayload
@@ -19,6 +20,18 @@ data class ChatMessagePayload(
 data class CommandPayload(
     val command: String,
     val args: List<String> = emptyList()
+) : MessagePayload
+
+@Serializable
+@SerialName("PLAYER_PIECE")
+data class PlayerPiecePayload(
+    val piece: PlayerPiece
+) : MessagePayload
+
+@Serializable
+@SerialName("PLAYERS_CONNECTED")
+data class PlayersConnectedPayload(
+    val amountOfPlayersConnected: Int
 ) : MessagePayload
 
 @Serializable

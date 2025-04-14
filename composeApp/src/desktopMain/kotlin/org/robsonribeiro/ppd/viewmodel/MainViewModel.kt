@@ -17,9 +17,8 @@ class MainViewModel : ViewModel() {
     private var serverSocket: KommServerSocket? = null
     private var clientSocket: KommClientSocket? = null
 
-    private val _applicationState = MutableStateFlow(ApplicationState.GET_PIECE)
+    private val _applicationState = MutableStateFlow(ApplicationState.WAITING_PLAYERS)
     val applicationState = _applicationState.asStateFlow()
-
 
     private val _serverState = MutableStateFlow(ServerState())
     val serverState = _serverState.asStateFlow()
@@ -30,7 +29,7 @@ class MainViewModel : ViewModel() {
     private val _chatlogs = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatlogs = _chatlogs.asStateFlow()
 
-    private val _gameState = MutableStateFlow<GameState>(GameState(playerPiece = PlayerPiece.PLAYER_TWO))
+    private val _gameState = MutableStateFlow<GameState>(GameState(playerPiece = PlayerPiece.PLAYER_ONE))
     val gameState = _gameState.asStateFlow()
 
     private val _chatIsEnabled = MutableStateFlow(false)
@@ -79,6 +78,9 @@ class MainViewModel : ViewModel() {
                         allPlayerAreConnected()
                     }
                 }
+                is SeegaBoardPayload -> {
+                    _gameState.value = _gameState.value.copy(board = payload.seegaBoard)
+                }
                 else -> {
 
                 }
@@ -117,6 +119,12 @@ class MainViewModel : ViewModel() {
 
     fun onBoardCellClick(row: Int, column: Int) {
         _gameState.handleOnClickGridCell(row, column)
+        clientSocket?.sendSeegaBoard(_gameState.value.board)
+    }
+
+    fun movePiece(fromRow: Int, fromColumn: Int, toRow: Int, toColumn: Int) {
+        _gameState.handleMovePieceOnGridCell(fromRow, fromColumn, toRow, toColumn)
+        clientSocket?.sendSeegaBoard(_gameState.value.board)
     }
 
     fun leaveServer() {
@@ -125,5 +133,9 @@ class MainViewModel : ViewModel() {
 
     fun showSeegaBoard() {
         _applicationState.value = ApplicationState.READY_TO_PLAY
+    }
+
+    fun setGameAction(gameAction: GameAction) {
+        _gameState.setGameAction(gameAction)
     }
 }

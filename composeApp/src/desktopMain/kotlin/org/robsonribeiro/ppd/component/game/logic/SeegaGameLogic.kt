@@ -25,7 +25,7 @@ enum class ApplicationState {
 }
 
 enum class GameAction {
-    PLACE_PIECE, REMOVE_PIECE
+    PLACE_PIECE, REMOVE_PIECE, MOVE_PIECE
 }
 
 data class GameState(
@@ -42,11 +42,21 @@ fun MutableStateFlow<GameState>.handleOnClickGridCell(row: Int, column: Int) {
         GameAction.REMOVE_PIECE -> {
             value.handleRemovePieceOnGridCell(row, column)
         }
+
+        else -> value
     }
+}
+
+fun MutableStateFlow<GameState>.handleMovePieceOnGridCell(fromRow: Int, fromColumn: Int, toRow: Int, toColumn: Int) {
+    value = value.handleMovePieceOnGridCell(fromRow, fromColumn, toRow, toColumn)
 }
 
 fun MutableStateFlow<GameState>.setPlayerPiece(piece: PlayerPiece) {
     value = value.copy(playerPiece = piece)
+}
+
+fun MutableStateFlow<GameState>.setGameAction(action: GameAction) {
+    value = value.copy(gameAction = action)
 }
 
 fun GameState.handlePlacementPieceOnGridCell(row: Int, column: Int): GameState {
@@ -74,6 +84,14 @@ fun GameState.handleRemovePieceOnGridCell(row: Int, column: Int): GameState {
         column = column,
         piece = null
     )
+    return this.copy(board = newBoard)
+}
+
+fun GameState.handleMovePieceOnGridCell(fromRow: Int, fromColumn: Int, toRow: Int, toColumn: Int): GameState {
+    val piece = this.board[fromRow][fromColumn] ?: return this
+    val newBoard = board
+        .updateCell(fromRow, fromColumn, null)
+        .updateCell(toRow, toColumn, piece)
     return this.copy(board = newBoard)
 }
 

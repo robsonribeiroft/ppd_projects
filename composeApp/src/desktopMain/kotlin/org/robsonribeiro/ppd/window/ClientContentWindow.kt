@@ -3,15 +3,14 @@ package org.robsonribeiro.ppd.window
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.robsonribeiro.ppd.component.BentoComponent
 import org.robsonribeiro.ppd.component.chat.ChatComponent
-import org.robsonribeiro.ppd.component.game.GameResultInfoComponent
-import org.robsonribeiro.ppd.component.game.SeegaBoardComponent
-import org.robsonribeiro.ppd.component.game.SortPieceComponent
-import org.robsonribeiro.ppd.component.game.WaitingPlayersComponent
+import org.robsonribeiro.ppd.component.game.*
 import org.robsonribeiro.ppd.component.game.logic.ApplicationState
+import org.robsonribeiro.ppd.component.game.logic.GameAction
 import org.robsonribeiro.ppd.component.server.ConnectClientButtonComponent
 import org.robsonribeiro.ppd.component.server.StartServerButtonComponent
 import org.robsonribeiro.ppd.dialog.ConfirmationDialog
@@ -90,7 +89,8 @@ fun ClientContentWindow(
                                         .fillMaxSize()
                                         .padding(Padding.large),
                                     gameState = gameState,
-                                    onCellClick = viewModel::onBoardCellClick
+                                    onCellClick = viewModel::onBoardCellClick,
+                                    onMovePiece = viewModel::movePiece
                                 )
                                 if (false) {
                                     GameResultInfoComponent(
@@ -148,10 +148,22 @@ fun ClientContentWindow(
                         ) {
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(Padding.large)
+                                    .fillMaxSize()
+                                    .padding(Padding.small),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Padding.small)
                             ) {
-
+                                gameState.playerPiece?.let { piece ->
+                                    PieceInfoComponent(
+                                        modifier = Modifier.weight(1f),
+                                        piece = piece
+                                    )
+                                }
+                                GameActionSelectionComponent(
+                                    modifier = Modifier.weight(1f)
+                                ) { gameAction ->
+                                    viewModel.setGameAction(gameAction)
+                                }
                             }
                         }
                     }

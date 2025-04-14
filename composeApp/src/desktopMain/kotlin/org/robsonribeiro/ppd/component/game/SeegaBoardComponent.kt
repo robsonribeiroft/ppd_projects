@@ -4,8 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import org.robsonribeiro.ppd.component.game.logic.GameAction
 import org.robsonribeiro.ppd.component.game.logic.GameState
 
 
@@ -13,8 +14,12 @@ import org.robsonribeiro.ppd.component.game.logic.GameState
 fun SeegaBoardComponent(
     modifier: Modifier = Modifier,
     gameState: GameState,
-    onCellClick: (row: Int, col: Int) -> Unit
+    onCellClick: (row: Int, col: Int) -> Unit,
+    onMovePiece: (fromRow: Int, fromColumn: Int, toRow: Int, toColumn: Int) -> Unit
 ) {
+
+    var originMoveCell by remember { mutableStateOf<Pair<Int, Int>>(-1 to -1) }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.SpaceEvenly
@@ -33,7 +38,20 @@ fun SeegaBoardComponent(
                         col = colIndex,
                         piece = piece,
                         isCenter = isCenter,
-                        onClick = onCellClick
+                        onClick = { row, column ->
+                            if (gameState.gameAction == GameAction.MOVE_PIECE) {
+                                if (originMoveCell.first < 0){
+                                    originMoveCell = row to column
+                                    println("ORIGIN CELL IS SET: $originMoveCell")
+                                } else {
+                                    println("DESTINY CELL IS : $row, $column")
+                                    onMovePiece(originMoveCell.first, originMoveCell.second, row, column)
+                                    originMoveCell = -1 to -1
+                                }
+                            } else {
+                                onCellClick(row, column)
+                            }
+                        }
                     )
                 }
             }

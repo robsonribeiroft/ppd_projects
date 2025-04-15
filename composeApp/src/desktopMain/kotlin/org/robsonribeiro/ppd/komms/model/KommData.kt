@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.robsonribeiro.ppd.component.game.logic.PlayerPiece
 import org.robsonribeiro.ppd.component.game.logic.SeegaBoard
+import org.robsonribeiro.ppd.model.OpponentScoreBoard
 
 @Serializable
 sealed interface MessagePayload
@@ -40,6 +41,16 @@ data class PlayersConnectedPayload(
 data class SeegaBoardPayload(
     val seegaBoard: SeegaBoard
 ) : MessagePayload
+
+@Serializable
+@SerialName("SCOREBOARD")
+data class ScoreBoardPayload(
+    val opponentScoreBoard: OpponentScoreBoard
+) : MessagePayload
+
+@Serializable
+@SerialName("NEW_GAME")
+data object NewGamePayload: MessagePayload
 
 @Serializable
 data class KommData(

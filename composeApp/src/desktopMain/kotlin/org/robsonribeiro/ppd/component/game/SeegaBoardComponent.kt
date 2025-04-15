@@ -32,17 +32,24 @@ fun SeegaBoardComponent(
                 repeat(5) { colIndex ->
                     val piece = gameState.board[rowIndex][colIndex]
                     val isCenter = rowIndex == 2 && colIndex == 2
+                    val isOriginMoveCell = originMoveCell.first >= 0
+                            && originMoveCell.first == rowIndex
+                            && originMoveCell.second == colIndex
+                            && piece != null
                     GridCellComponent(
                         modifier = Modifier.weight(1f),
                         row = rowIndex,
                         col = colIndex,
                         piece = piece,
                         isCenter = isCenter,
+                        isOriginMoveCell = isOriginMoveCell,
                         onClick = { row, column ->
-                            if (gameState.gameAction == GameAction.MOVE_PIECE) {
+                            if (gameState.gameAction == GameAction.MOVE) {
                                 if (originMoveCell.first < 0){
-                                    originMoveCell = row to column
-                                    println("ORIGIN CELL IS SET: $originMoveCell")
+                                    if (piece != null) {
+                                        originMoveCell = row to column
+                                        println("ORIGIN CELL IS SET: $originMoveCell")
+                                    }
                                 } else {
                                     println("DESTINY CELL IS : $row, $column")
                                     onMovePiece(originMoveCell.first, originMoveCell.second, row, column)

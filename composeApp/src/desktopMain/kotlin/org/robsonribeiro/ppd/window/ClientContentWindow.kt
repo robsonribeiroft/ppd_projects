@@ -2,15 +2,19 @@ package org.robsonribeiro.ppd.window
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.robsonribeiro.ppd.component.BentoComponent
 import org.robsonribeiro.ppd.component.chat.ChatComponent
 import org.robsonribeiro.ppd.component.game.*
 import org.robsonribeiro.ppd.component.game.logic.ApplicationState
 import org.robsonribeiro.ppd.component.game.logic.GameAction
+import org.robsonribeiro.ppd.component.game.logic.GameOutcome
+import org.robsonribeiro.ppd.component.game.logic.isReadyToPlay
 import org.robsonribeiro.ppd.component.server.ConnectClientButtonComponent
 import org.robsonribeiro.ppd.component.server.StartServerButtonComponent
 import org.robsonribeiro.ppd.dialog.ConfirmationDialog
@@ -18,6 +22,7 @@ import org.robsonribeiro.ppd.dialog.ConnectToServerDialog
 import org.robsonribeiro.ppd.dialog.InfoDialog
 import org.robsonribeiro.ppd.dialog.JoinClientToServerDialog
 import org.robsonribeiro.ppd.model.ConfirmationDialogInfo
+import org.robsonribeiro.ppd.model.ScoreBoardInfo
 import org.robsonribeiro.ppd.values.Padding
 import org.robsonribeiro.ppd.values.StringResources
 import org.robsonribeiro.ppd.viewmodel.MainViewModel
@@ -33,6 +38,7 @@ fun ClientContentWindow(
     val clientState by viewModel.clientState.collectAsState()
     val chatlogs by viewModel.chatlogs.collectAsState()
     val gameState by viewModel.gameState.collectAsState()
+    val scoredBoardOpponent by viewModel.scoredBoardOpponent.collectAsState()
 
     var showConnectToServerDialog by remember { mutableStateOf(false) }
     var showJoinClientToServerDialog by remember { mutableStateOf(false) }
@@ -92,11 +98,13 @@ fun ClientContentWindow(
                                     onCellClick = viewModel::onBoardCellClick,
                                     onMovePiece = viewModel::movePiece
                                 )
-                                if (false) {
+                                if (gameState.gameOutcome != GameOutcome.Ongoing) {
                                     GameResultInfoComponent(
                                         modifier = Modifier,
-                                        winner = true
-                                    )
+                                        gameState = gameState
+                                    ) {
+                                        viewModel.newGame()
+                                    }
                                 }
                             }
                         }
@@ -153,16 +161,31 @@ fun ClientContentWindow(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(Padding.small)
                             ) {
-                                gameState.playerPiece?.let { piece ->
-                                    PieceInfoComponent(
+                                if (applicationState.isReadyToPlay()) {
+                                    ScoreBoardComponent(
                                         modifier = Modifier.weight(1f),
-                                        piece = piece
+                                        scoreBoardInfo = ScoreBoardInfo(
+                                            clientId = clientState.clientId,
+                                            playerPiece = gameState.playerPiece,
+                                            capturedPiecesAmount = gameState.amountPiecesCaptured,
+                                            opponentPlayerPiece = scoredBoardOpponent.opponentPiece,
+                                            opponentClientId = scoredBoardOpponent.opponentClientId,
+                                            opponentCapturedPiecesAmount = scoredBoardOpponent.opponentAmountCaptured
+                                        )
                                     )
-                                }
-                                GameActionSelectionComponent(
-                                    modifier = Modifier.weight(1f)
-                                ) { gameAction ->
-                                    viewModel.setGameAction(gameAction)
+                                    GameActionSelectionComponent(
+                                        modifier = Modifier.weight(1f),
+                                        currentAction = gameState.gameAction,
+                                        concede = viewModel::concede
+                                    ) { gameAction ->
+                                        viewModel.setGameAction(gameAction)
+                                    }
+                                } else {
+                                    Text(
+                                        modifier = Modifier.fillMaxSize(),
+                                        text = "Waiting for the start of the game",
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
                         }

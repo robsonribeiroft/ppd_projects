@@ -17,18 +17,22 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.delay
+import org.robsonribeiro.ppd.component.game.logic.GameOutcome
+import org.robsonribeiro.ppd.component.game.logic.GameState
 import org.robsonribeiro.ppd.values.ColorResources
 import org.robsonribeiro.ppd.values.Padding
 import org.robsonribeiro.ppd.values.TextSize
+import org.robsonribeiro.ppd.values.empty
 
 const val WINNER = "You Win!"
 const val LOSER = "You Lose!"
+const val DRAW = "Draw!"
 const val NEW_GAME = "New Game"
 
 @Composable
 fun GameResultInfoComponent(
     modifier: Modifier,
-    winner: Boolean = false,
+    gameState: GameState,
     onClick: ()->Unit = {}
 ) {
 
@@ -44,6 +48,18 @@ fun GameResultInfoComponent(
         animationSpec = tween(durationMillis = 500),
         label = "ButtonAlphaAnimation"
     )
+
+    val (text, back) = when(val outcome = gameState.gameOutcome) {
+        GameOutcome.Draw -> DRAW to ColorResources.background_gradient
+        GameOutcome.Ongoing -> String.empty to ColorResources.background_gradient
+        is GameOutcome.Win -> {
+            if (gameState.playerPiece == outcome.winner) {
+                WINNER to ColorResources.win_gradient
+            } else {
+                LOSER to ColorResources.defeat_gradient
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -63,11 +79,11 @@ fun GameResultInfoComponent(
                 modifier = Modifier
                     .background(
                         brush = Brush.linearGradient(
-                            if (winner)ColorResources.win_gradient else ColorResources.defeat_gradient
+                            back
                         ),
                         shape = CircleShape,
                     ),
-                text = if (winner) WINNER else LOSER,
+                text = text,
                 textAlign = TextAlign.Center,
                 fontSize = TextSize.veryExtraLarge,
                 color = ColorResources.White

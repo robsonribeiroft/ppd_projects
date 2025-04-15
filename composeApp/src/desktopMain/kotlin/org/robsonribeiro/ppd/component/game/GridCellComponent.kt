@@ -27,13 +27,14 @@ fun GridCellComponent(
     col: Int,
     piece: PlayerPiece?,
     isCenter: Boolean,
+    isOriginMoveCell: Boolean,
     onClick: (row: Int, col: Int) -> Unit
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
             .border(BorderStroke(Padding.single, ColorResources.BlackRich))
-            .background(ColorResources.White.copy(alpha = 0.3f))
+            .background(if (isOriginMoveCell) ColorResources.GreenEmerald.copy(alpha = 0.4f) else ColorResources.White)
             .clickable { onClick(row, col) },
         contentAlignment = Alignment.Center
     ) {

@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import org.robsonribeiro.ppd.component.game.logic.PlayerPiece
 import org.robsonribeiro.ppd.component.game.logic.SeegaBoard
 import org.robsonribeiro.ppd.komms.model.*
+import org.robsonribeiro.ppd.model.OpponentScoreBoard
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -77,11 +78,29 @@ class KommClientSocket(
         sendJson(pieceKommData.toJson())
     }
 
+    fun sendNewGame (){
+        val kommData = KommData(
+            clientId = clientId!!,
+            channel = CHANNEL_GAME,
+            data = NewGamePayload
+        )
+        sendJson(kommData.toJson())
+    }
+
     fun sendSeegaBoard(seegaBoard: SeegaBoard) {
         val kommData = KommData(
             clientId = clientId!!,
             channel = CHANNEL_GAME,
             data = SeegaBoardPayload(seegaBoard)
+        )
+        sendJson(kommData.toJson())
+    }
+
+    fun sendScoreBoard(piece: PlayerPiece, amountCapturedPieces: Int) {
+        val kommData = KommData(
+            clientId = clientId!!,
+            channel = CHANNEL_GAME,
+            data = ScoreBoardPayload(OpponentScoreBoard(clientId!!, piece, amountCapturedPieces))
         )
         sendJson(kommData.toJson())
     }

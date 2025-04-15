@@ -7,10 +7,7 @@ import org.robsonribeiro.ppd.component.game.logic.*
 import org.robsonribeiro.ppd.helper.isServerLive
 import org.robsonribeiro.ppd.komms.*
 import org.robsonribeiro.ppd.komms.model.*
-import org.robsonribeiro.ppd.model.ChatMessage
-import org.robsonribeiro.ppd.model.ClientState
-import org.robsonribeiro.ppd.model.ServerState
-import org.robsonribeiro.ppd.model.TypeMessage
+import org.robsonribeiro.ppd.model.*
 
 class MainViewModel : ViewModel() {
 
@@ -29,8 +26,11 @@ class MainViewModel : ViewModel() {
     private val _chatlogs = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatlogs = _chatlogs.asStateFlow()
 
-    private val _gameState = MutableStateFlow<GameState>(GameState(playerPiece = PlayerPiece.PLAYER_ONE))
+    private val _gameState = MutableStateFlow(GameState())
     val gameState = _gameState.asStateFlow()
+
+    private val _scoredBoardOpponent = MutableStateFlow(OpponentScoreBoard())
+    val scoredBoardOpponent = _scoredBoardOpponent.asStateFlow()
 
     private val _chatIsEnabled = MutableStateFlow(false)
 
@@ -80,10 +80,16 @@ class MainViewModel : ViewModel() {
                 }
                 is SeegaBoardPayload -> {
                     _gameState.value = _gameState.value.copy(board = payload.seegaBoard)
+                    _gameState.checkGameOutcome()
                 }
-                else -> {
-
+                is ScoreBoardPayload -> {
+                    _scoredBoardOpponent.value = payload.opponentScoreBoard
+                    _gameState.checkGameOutcome()
                 }
+                is NewGamePayload -> {
+                    _gameState.value = GameState()
+                }
+                else -> Unit
             }
         }
         _clientState.value = ClientState(
@@ -104,7 +110,7 @@ class MainViewModel : ViewModel() {
 
     private fun allPlayerAreConnected() {
         val playerPiece = randomPlayerPiece()
-        val opponentPiece = if (playerPiece == PlayerPiece.PLAYER_ONE) PlayerPiece.PLAYER_TWO else PlayerPiece.PLAYER_ONE
+        val opponentPiece = playerPiece.getOpponentPiece()
         println("The ${_clientState.value.clientId} sorted the $playerPiece")
         clientSocket?.sendPlayerPiece(opponentPiece)
         _applicationState.value = ApplicationState.GET_PIECE
@@ -118,8 +124,18 @@ class MainViewModel : ViewModel() {
     }
 
     fun onBoardCellClick(row: Int, column: Int) {
-        _gameState.handleOnClickGridCell(row, column)
-        clientSocket?.sendSeegaBoard(_gameState.value.board)
+        _gameState.handleOnClickGridCell(row, column) { error ->
+            _chatlogs.value += ChatMessage(
+                sender = _clientState.value.clientId!!,
+                message = error,
+                messageOwner = TypeMessage.SYSTEM
+            )
+        }
+        with(_gameState.value) {
+            clientSocket?.sendSeegaBoard(board)
+            clientSocket?.sendScoreBoard(playerPiece!!, amountPiecesCaptured)
+        }
+        _gameState.checkGameOutcome()
     }
 
     fun movePiece(fromRow: Int, fromColumn: Int, toRow: Int, toColumn: Int) {
@@ -133,9 +149,20 @@ class MainViewModel : ViewModel() {
 
     fun showSeegaBoard() {
         _applicationState.value = ApplicationState.READY_TO_PLAY
+        clientSocket?.sendScoreBoard(_gameState.value.playerPiece!!, _gameState.value.amountPiecesCaptured)
     }
 
     fun setGameAction(gameAction: GameAction) {
         _gameState.setGameAction(gameAction)
+    }
+
+    fun concede() {
+        clientSocket?.sendCommand(COMMAND_QUIT)
+    }
+
+    fun newGame() {
+        _gameState.value = GameState()
+        clientSocket?.sendNewGame()
+        allPlayerAreConnected()
     }
 }

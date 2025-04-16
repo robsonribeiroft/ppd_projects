@@ -2,6 +2,7 @@ package org.robsonribeiro.ppd.component.game.logic
 
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.serialization.Serializable
 import org.robsonribeiro.ppd.values.ColorResources
 import kotlin.random.Random
 
@@ -41,13 +42,22 @@ data class GameState(
     val playerPiece: PlayerPiece? = null,
     val gameAction: GameAction = GameAction.PLACE,
     val amountPiecesCaptured: Int = 0,
-    val gameOutcome: GameOutcome = GameOutcome.Ongoing
+    val gameOutcome: GameOutcome = GameOutcome.Ongoing,
+    val allPiecesPlaced: Boolean = false
 )
 
+@Serializable
 sealed interface GameOutcome {
+    @Serializable
     data object Ongoing : GameOutcome
+    @Serializable
     data class Win(val winner: PlayerPiece) : GameOutcome
+    @Serializable
     data object Draw : GameOutcome
+    @Serializable
+    data object Defeat : GameOutcome
+    @Serializable
+    data object OpponentConcede : GameOutcome
 }
 
 fun MutableStateFlow<GameState>.handleOnClickGridCell(row: Int, column: Int, onError: (String) -> Unit = {}) {
@@ -94,7 +104,7 @@ fun SeegaBoard.countPieces(): Pair<Int, Int> {
 }
 
 fun MutableStateFlow<GameState>.checkGameOutcome() {
-    if (value.gameAction != GameAction.CAPTURE)
+    if (!value.allPiecesPlaced)
         return
     val board =  value.board
     val (p1count, p2count) = board.countPieces()
@@ -107,11 +117,34 @@ fun MutableStateFlow<GameState>.checkGameOutcome() {
 
     val barrierWinner = board.checkBarrierWin()
     barrierWinner?.let { winner ->
+        println(this.toString())
         value = value.copy(gameOutcome = GameOutcome.Win(winner))
     }
 
     if (p1count <= 3 && p2count <= 3) {
         value = value.copy(gameOutcome = GameOutcome.Draw)
+    }
+}
+
+fun GameState.checkGameOutcome(onOutcome: (GameOutcome) -> Unit ){
+    if (!allPiecesPlaced)
+        return
+
+    val (p1count, p2count) = board.countPieces()
+    if (p1count == 0) {
+        onOutcome(GameOutcome.Win(PlayerPiece.PLAYER_TWO))
+    }
+    if (p2count == 0) {
+        onOutcome(GameOutcome.Win(PlayerPiece.PLAYER_ONE))
+    }
+
+    val barrierWinner = board.checkBarrierWin()
+    barrierWinner?.let { winner ->
+        onOutcome(GameOutcome.Win(winner))
+    }
+
+    if (p1count <= 3 && p2count <= 3) {
+        onOutcome(GameOutcome.Draw)
     }
 }
 
@@ -138,7 +171,27 @@ fun GameState.handlePlacementPieceOnGridCell(row: Int, column: Int, onError: (St
         column = column,
         piece = this.playerPiece
     )
+    if (!allPiecesPlaced) {
+        val (p1, p2) = board.countPieces()
+        val totalPieces = p1 + p2
+        if (totalPieces == 24) {
+            return this.copy(
+                allPiecesPlaced = true,
+                board = newBoard
+            )
+        }
+    }
     return this.copy(board = newBoard)
+}
+
+fun GameState.checkAllPiecesArePlaced(): GameState {
+    if (allPiecesPlaced) return this
+    val (p1, p2) = board.countPieces()
+    val totalPieces = p1 + p2
+    if (totalPieces == 24) {
+        return this.copy(allPiecesPlaced = true)
+    }
+    return this
 }
 
 fun GameState.handleRemovePieceOnGridCell(row: Int, column: Int, onError: (String)->Unit): GameState {

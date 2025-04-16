@@ -2,6 +2,7 @@ package org.robsonribeiro.ppd.komms
 
 import kotlinx.coroutines.Runnable
 import kotlinx.serialization.json.Json
+import org.robsonribeiro.ppd.component.game.logic.GameOutcome
 import org.robsonribeiro.ppd.component.game.logic.PlayerPiece
 import org.robsonribeiro.ppd.component.game.logic.SeegaBoard
 import org.robsonribeiro.ppd.komms.model.*
@@ -78,7 +79,16 @@ class KommClientSocket(
         sendJson(pieceKommData.toJson())
     }
 
-    fun sendNewGame (){
+    fun sendGameOutCome(gameOutcome: GameOutcome){
+        val kommData = KommData(
+            clientId = clientId!!,
+            channel = CHANNEL_GAME,
+            data = GameOutcomePayload(gameOutcome)
+        )
+        sendJson(kommData.toJson())
+    }
+
+    fun sendNewGame(){
         val kommData = KommData(
             clientId = clientId!!,
             channel = CHANNEL_GAME,

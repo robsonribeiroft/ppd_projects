@@ -40,7 +40,7 @@ class MainViewModel : ViewModel() {
 
     fun startServer(host: String, port: Int) {
         if (!isServerLive(host, port)) {
-            serverSocket = KommServerSocket(host, port, requiredPlayers = 2)
+            serverSocket = KommServerSocket(host, port)
             serverSocket?.start()
         }
         _serverState.value = ServerState(
@@ -80,11 +80,18 @@ class MainViewModel : ViewModel() {
                 }
                 is SeegaBoardPayload -> {
                     _gameState.value = _gameState.value.copy(board = payload.seegaBoard)
-                    _gameState.checkGameOutcome()
+                    _gameState.value = _gameState.value.checkAllPiecesArePlaced()
+//                    _gameState.checkGameOutcome()
                 }
                 is ScoreBoardPayload -> {
                     _scoredBoardOpponent.value = payload.opponentScoreBoard
-                    _gameState.checkGameOutcome()
+//                    _gameState.checkGameOutcome()
+                }
+                is GameOutcomePayload -> {
+                    _applicationState.value = ApplicationState.READY_TO_PLAY
+                    _gameState.value = _gameState.value.copy(
+                        gameOutcome = payload.gameOutcome
+                    )
                 }
                 is NewGamePayload -> {
                     _gameState.value = GameState()
@@ -135,12 +142,22 @@ class MainViewModel : ViewModel() {
             clientSocket?.sendSeegaBoard(board)
             clientSocket?.sendScoreBoard(playerPiece!!, amountPiecesCaptured)
         }
-        _gameState.checkGameOutcome()
+        //_gameState.checkGameOutcome()
+        _gameState.value.checkGameOutcome { gameOutcome ->
+            _gameState.value.copy(gameOutcome = gameOutcome)
+            clientSocket?.sendGameOutCome(gameOutcome)
+        }
     }
 
     fun movePiece(fromRow: Int, fromColumn: Int, toRow: Int, toColumn: Int) {
         _gameState.handleMovePieceOnGridCell(fromRow, fromColumn, toRow, toColumn)
         clientSocket?.sendSeegaBoard(_gameState.value.board)
+        //_gameState.checkGameOutcome()
+        _gameState.value.checkGameOutcome { gameOutcome ->
+            _gameState.value.copy(gameOutcome = gameOutcome)
+            clientSocket?.sendGameOutCome(gameOutcome)
+        }
+
     }
 
     fun leaveServer() {
@@ -157,7 +174,10 @@ class MainViewModel : ViewModel() {
     }
 
     fun concede() {
-        clientSocket?.sendCommand(COMMAND_QUIT)
+        _gameState.value = _gameState.value.copy(
+            gameOutcome = GameOutcome.Defeat
+        )
+        clientSocket?.sendGameOutCome(GameOutcome.OpponentConcede)
     }
 
     fun newGame() {

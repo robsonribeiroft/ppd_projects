@@ -52,6 +52,8 @@ fun GameResultInfoComponent(
     val (text, back) = when(val outcome = gameState.gameOutcome) {
         GameOutcome.Draw -> DRAW to ColorResources.background_gradient
         GameOutcome.Ongoing -> String.empty to ColorResources.background_gradient
+        GameOutcome.OpponentConcede -> WINNER to ColorResources.win_gradient
+        GameOutcome.Defeat ->LOSER to ColorResources.defeat_gradient
         is GameOutcome.Win -> {
             if (gameState.playerPiece == outcome.winner) {
                 WINNER to ColorResources.win_gradient

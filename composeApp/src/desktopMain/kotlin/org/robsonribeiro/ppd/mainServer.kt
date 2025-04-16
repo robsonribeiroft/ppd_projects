@@ -4,7 +4,7 @@ import org.robsonribeiro.ppd.helper.isServerLive
 import org.robsonribeiro.ppd.komms.*
 
 fun main() {
-    val server = KommServerSocket(SERVER_HOSTNAME, SERVER_PORT, 2)
+    val server = KommServerSocket(SERVER_HOSTNAME, SERVER_PORT)
     server.start()
     Thread.sleep(1000)
 

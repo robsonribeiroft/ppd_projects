@@ -12,8 +12,7 @@ import java.util.concurrent.Executors
 
 class KommServerSocket(
     private val host: String,
-    private val port: Int,
-    private val requiredPlayers: Int
+    private val port: Int
 ): Thread() {
 
     private lateinit var serverSocket: ServerSocket

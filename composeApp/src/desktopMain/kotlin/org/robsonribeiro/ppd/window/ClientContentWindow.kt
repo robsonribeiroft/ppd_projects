@@ -176,7 +176,14 @@ fun ClientContentWindow(
                                     GameActionSelectionComponent(
                                         modifier = Modifier.weight(1f),
                                         currentAction = gameState.gameAction,
-                                        concede = viewModel::concede
+                                        concede = {
+                                            showConfirmationDialog = ConfirmationDialogInfo(
+                                                title = "Concede",
+                                                description = "Confirm this action will make your opponent win.\nAre you sure?"
+                                            ) {
+                                                viewModel.concede()
+                                            }
+                                        }
                                     ) { gameAction ->
                                         viewModel.setGameAction(gameAction)
                                     }

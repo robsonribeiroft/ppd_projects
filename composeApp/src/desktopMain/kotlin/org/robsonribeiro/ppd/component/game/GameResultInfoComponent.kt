@@ -49,6 +49,7 @@ fun GameResultInfoComponent(
         label = "ButtonAlphaAnimation"
     )
 
+    println("GameOutcome: ${gameState.gameOutcome}")
     val (text, back) = when(val outcome = gameState.gameOutcome) {
         GameOutcome.Draw -> DRAW to ColorResources.background_gradient
         GameOutcome.Ongoing -> String.empty to ColorResources.background_gradient

@@ -148,6 +148,29 @@ fun GameState.checkGameOutcome(onOutcome: (GameOutcome) -> Unit ){
     }
 }
 
+fun GameState.checkGameOutcome(): GameOutcome{
+    if (!allPiecesPlaced)
+        return GameOutcome.Ongoing
+
+    val (p1count, p2count) = board.countPieces()
+    if (p1count == 0) {
+        GameOutcome.Win(PlayerPiece.PLAYER_TWO)
+    }
+    if (p2count == 0) {
+        GameOutcome.Win(PlayerPiece.PLAYER_ONE)
+    }
+
+    val barrierWinner = board.checkBarrierWin()
+    barrierWinner?.let {
+        GameOutcome.Win(barrierWinner)
+    }
+
+    if (p1count <= 3 && p2count <= 3) {
+        return GameOutcome.Draw
+    }
+    return GameOutcome.Ongoing
+}
+
 fun MutableStateFlow<GameState>.handleMovePieceOnGridCell(fromRow: Int, fromColumn: Int, toRow: Int, toColumn: Int) {
     value = value.handleMovePieceOnGridCell(fromRow, fromColumn, toRow, toColumn)
 }

@@ -143,21 +143,20 @@ class MainViewModel : ViewModel() {
             clientSocket?.sendScoreBoard(playerPiece!!, amountPiecesCaptured)
         }
         //_gameState.checkGameOutcome()
-        _gameState.value.checkGameOutcome { gameOutcome ->
-            _gameState.value.copy(gameOutcome = gameOutcome)
-            clientSocket?.sendGameOutCome(gameOutcome)
-        }
+        checkGameOutCome()
     }
 
     fun movePiece(fromRow: Int, fromColumn: Int, toRow: Int, toColumn: Int) {
         _gameState.handleMovePieceOnGridCell(fromRow, fromColumn, toRow, toColumn)
         clientSocket?.sendSeegaBoard(_gameState.value.board)
         //_gameState.checkGameOutcome()
-        _gameState.value.checkGameOutcome { gameOutcome ->
-            _gameState.value.copy(gameOutcome = gameOutcome)
-            clientSocket?.sendGameOutCome(gameOutcome)
-        }
+        checkGameOutCome()
+    }
 
+    private fun checkGameOutCome() {
+        val calculatedOutcome  = _gameState.value.checkGameOutcome()
+        _gameState.value = _gameState.value.copy(gameOutcome = calculatedOutcome)
+        clientSocket?.sendGameOutCome(calculatedOutcome)
     }
 
     fun leaveServer() {

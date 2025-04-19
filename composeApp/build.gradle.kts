@@ -37,8 +37,8 @@ compose.desktop {
         mainClass = "org.robsonribeiro.ppd.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "org.robsonribeiro.ppd"
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe)
+            packageName = "Seega PPD"
             packageVersion = "1.0.0"
         }
     }

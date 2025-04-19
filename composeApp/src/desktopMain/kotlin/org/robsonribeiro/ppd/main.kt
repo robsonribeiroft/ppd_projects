@@ -5,7 +5,9 @@ import org.robsonribeiro.ppd.viewmodel.MainViewModel
 import org.robsonribeiro.ppd.window.ClientWindow
 
 fun main() = application {
-    ClientWindow(MainViewModel()) {
+    ClientWindow(
+        mainViewModel = MainViewModel()
+    ) {
         exitApplication()
     }
 }

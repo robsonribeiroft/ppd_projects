@@ -164,6 +164,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun leaveServer() {
+        clientSocket?.sendGameOutCome(GameOutcome.OpponentConcede)
         clientSocket?.sendCommand(Command.LEAVE_SERVER)
     }
 

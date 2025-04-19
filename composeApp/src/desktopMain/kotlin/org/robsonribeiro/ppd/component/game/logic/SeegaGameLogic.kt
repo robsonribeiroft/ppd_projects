@@ -8,6 +8,15 @@ import kotlin.random.Random
 
 typealias SeegaBoard = List<List<PlayerPiece?>>
 
+fun SeegaBoard.printSeegaBoard() {
+    this.forEachIndexed { rowIndex, columns ->
+        columns.forEachIndexed { colIndex, playerPiece ->
+            print("[($rowIndex,$colIndex) $playerPiece] ")
+        }
+        println()
+    }
+}
+
 enum class PlayerPiece(
     val color: Color
 ) {
@@ -38,7 +47,7 @@ enum class GameAction {
 }
 
 data class GameState(
-    val board: SeegaBoard = initialBoardState(),
+    val board: SeegaBoard = initialBoardState,
     val playerPiece: PlayerPiece? = null,
     val gameAction: GameAction = GameAction.PLACE,
     val amountPiecesCaptured: Int = 0,
@@ -75,98 +84,110 @@ fun MutableStateFlow<GameState>.handleOnClickGridCell(row: Int, column: Int, onE
     }
 }
 
-fun SeegaBoard.checkBarrierWin(): PlayerPiece? {
-    for (row in 0..4) {
-        if (this[row].all { it == PlayerPiece.PLAYER_ONE }) return PlayerPiece.PLAYER_ONE
-        if (this[row].all { it == PlayerPiece.PLAYER_TWO }) return PlayerPiece.PLAYER_TWO
-    }
-    // Check columns
-    for (col in 0..4) {
-        if ((0..4).all { row -> this[row][col] == PlayerPiece.PLAYER_ONE }) return PlayerPiece.PLAYER_ONE
-        if ((0..4).all { row -> this[row][col] == PlayerPiece.PLAYER_TWO }) return PlayerPiece.PLAYER_TWO
-    }
-    return null
-}
-
 fun SeegaBoard.countPieces(): Pair<Int, Int> {
-    var p1Count = 0
-    var p2Count = 0
+    var p1RemainingPieces = 0
+    var p2RemainingPieces = 0
     for (row in this) {
         for (cell in row) {
             when (cell) {
-                PlayerPiece.PLAYER_ONE -> p1Count++
-                PlayerPiece.PLAYER_TWO -> p2Count++
+                PlayerPiece.PLAYER_ONE -> p1RemainingPieces++
+                PlayerPiece.PLAYER_TWO -> p2RemainingPieces++
                 null -> Unit
             }
         }
     }
-    return p1Count to p2Count
+    return p1RemainingPieces to p2RemainingPieces
 }
 
-fun MutableStateFlow<GameState>.checkGameOutcome() {
-    if (!value.allPiecesPlaced)
-        return
-    val board =  value.board
-    val (p1count, p2count) = board.countPieces()
-    if (p1count == 0) {
-        value = value.copy(gameOutcome = GameOutcome.Win(PlayerPiece.PLAYER_TWO))
+fun SeegaBoard.checkGameOutComeAfterCapture(): GameOutcome {
+    val (p1RemainingPieces, p2RemainingPieces) = countPieces()
+    if (p1RemainingPieces <= 1) {
+        return GameOutcome.Win(PlayerPiece.PLAYER_TWO)
     }
-    if (p2count == 0) {
-        value = value.copy(gameOutcome = GameOutcome.Win(PlayerPiece.PLAYER_ONE))
+    if (p2RemainingPieces <= 1) {
+        return GameOutcome.Win(PlayerPiece.PLAYER_ONE)
     }
-
-    val barrierWinner = board.checkBarrierWin()
-    barrierWinner?.let { winner ->
-        println(this.toString())
-        value = value.copy(gameOutcome = GameOutcome.Win(winner))
-    }
-
-    if (p1count <= 3 && p2count <= 3) {
-        value = value.copy(gameOutcome = GameOutcome.Draw)
-    }
+    return GameOutcome.Ongoing
 }
 
-fun GameState.checkGameOutcome(onOutcome: (GameOutcome) -> Unit ){
-    if (!allPiecesPlaced)
-        return
-
-    val (p1count, p2count) = board.countPieces()
-    if (p1count == 0) {
-        onOutcome(GameOutcome.Win(PlayerPiece.PLAYER_TWO))
+private fun SeegaBoard.checkBarrierInColum(): Pair<PlayerPiece, Int>? {
+    for (column in 1 .. 3) {
+        if ((0..4).all { row -> this[row][column] == PlayerPiece.PLAYER_ONE }) return PlayerPiece.PLAYER_ONE to column
+        if ((0..4).all { row -> this[row][column] == PlayerPiece.PLAYER_TWO }) return PlayerPiece.PLAYER_TWO to column
     }
-    if (p2count == 0) {
-        onOutcome(GameOutcome.Win(PlayerPiece.PLAYER_ONE))
-    }
-
-    val barrierWinner = board.checkBarrierWin()
-    barrierWinner?.let { winner ->
-        onOutcome(GameOutcome.Win(winner))
-    }
-
-    if (p1count <= 3 && p2count <= 3) {
-        onOutcome(GameOutcome.Draw)
-    }
+    return null
 }
 
-fun GameState.checkGameOutcome(): GameOutcome{
-    if (!allPiecesPlaced)
-        return GameOutcome.Ongoing
-
-    val (p1count, p2count) = board.countPieces()
-    if (p1count == 0) {
-        GameOutcome.Win(PlayerPiece.PLAYER_TWO)
+private fun SeegaBoard.checkBarrierInRow(): Pair<PlayerPiece, Int>? {
+    for (row in 1 .. 3) {
+        if (this[row].all { piece -> piece == PlayerPiece.PLAYER_ONE }) return PlayerPiece.PLAYER_ONE to row
+        if (this[row].all { piece -> piece == PlayerPiece.PLAYER_TWO }) return PlayerPiece.PLAYER_TWO to row
     }
-    if (p2count == 0) {
-        GameOutcome.Win(PlayerPiece.PLAYER_ONE)
+    return null
+}
+
+private fun SeegaBoard.isOpponentIsolatedByHorizontalBarrier(
+    barrierInRow: Int,
+    barrierFormedByPiece: PlayerPiece
+): Boolean {
+    val opponentPiece = barrierFormedByPiece.getOpponentPiece()
+    var thereIsOpponentAboveTheBarrier = false
+    var thereIsOpponentBelowTheBarrier = false
+    (0 until barrierInRow).forEach { row ->
+        (0..4).forEach { col ->
+            if (this[row][col] == opponentPiece) {
+                thereIsOpponentAboveTheBarrier = true
+            }
+        }
+    }
+    (barrierInRow+1 .. 4).forEach { row ->
+        (0..4).forEach { col ->
+            if (this[row][col] == opponentPiece) {
+                thereIsOpponentBelowTheBarrier = true
+            }
+        }
     }
 
-    val barrierWinner = board.checkBarrierWin()
-    barrierWinner?.let {
-        GameOutcome.Win(barrierWinner)
+    return thereIsOpponentAboveTheBarrier xor thereIsOpponentBelowTheBarrier
+}
+
+private fun SeegaBoard.isOpponentIsolatedByVerticalBarrier(
+    barrierInColumn: Int,
+    barrierFormedByPiece: PlayerPiece
+): Boolean {
+    val opponentPiece = barrierFormedByPiece.getOpponentPiece()
+    var thereIsOpponentLeftTheBarrier = false
+    var thereIsOpponentRightTheBarrier = false
+    (0 .. 4).forEach { row ->
+        (0 until barrierInColumn).forEach { col ->
+            if (this[row][col] == opponentPiece) {
+                thereIsOpponentLeftTheBarrier = true
+            }
+        }
+    }
+    (0 .. 4).forEach { row ->
+        (barrierInColumn+1..4).forEach { col ->
+            if (this[row][col] == opponentPiece) {
+                thereIsOpponentRightTheBarrier = true
+            }
+        }
     }
 
-    if (p1count <= 3 && p2count <= 3) {
-        return GameOutcome.Draw
+    return thereIsOpponentLeftTheBarrier xor thereIsOpponentRightTheBarrier
+}
+
+fun SeegaBoard.checkGameOutComeAfterMove(): GameOutcome {
+    checkBarrierInRow()?.let { (piece, barrierRowIndex) ->
+        val opponentIsolated = isOpponentIsolatedByHorizontalBarrier(barrierInRow = barrierRowIndex, barrierFormedByPiece = piece)
+        if (opponentIsolated) {
+            return GameOutcome.Win(piece)
+        }
+    }
+    checkBarrierInColum()?.let { (piece, barrierColumnIndex) ->
+        val opponentIsolated = isOpponentIsolatedByVerticalBarrier(barrierInColumn = barrierColumnIndex, barrierFormedByPiece = piece)
+        if (opponentIsolated) {
+            return GameOutcome.Win(piece)
+        }
     }
     return GameOutcome.Ongoing
 }
@@ -184,19 +205,25 @@ fun MutableStateFlow<GameState>.setGameAction(action: GameAction) {
 }
 
 fun GameState.handlePlacementPieceOnGridCell(row: Int, column: Int, onError: (String)->Unit): GameState {
+    if (allPiecesPlaced) {
+        onError("Invalid Placement: All pieces were placed. Move your piece or capture your opponent piece.")
+        return this
+    }
+    if (row == 2 && column == 2 && !allPiecesPlaced) {
+        onError("Invalid Placement: It is not possible to set a piece in the center of the board on placement stage")
+        return this
+    }
     if (this.board[row][column] != null) {
         onError("Invalid Placement: Cell ($row, $column) is already occupied.")
         return this
     }
     println("Placement on ($row, $column) by ${this.playerPiece}")
-    val newBoard = this.board.updateCell(
-        row = row,
-        column = column,
-        piece = this.playerPiece
-    )
+    val newBoard = this.board.updateCell(row = row, column = column, piece = this.playerPiece)
+
     if (!allPiecesPlaced) {
-        val (p1, p2) = board.countPieces()
+        val (p1, p2) = newBoard.countPieces()
         val totalPieces = p1 + p2
+        println("placement total board: $totalPieces")
         if (totalPieces == 24) {
             return this.copy(
                 allPiecesPlaced = true,
@@ -218,6 +245,10 @@ fun GameState.checkAllPiecesArePlaced(): GameState {
 }
 
 fun GameState.handleRemovePieceOnGridCell(row: Int, column: Int, onError: (String)->Unit): GameState {
+    if (allPiecesPlaced) {
+        onError("You can only remove the pieces on placement stage!")
+        return this
+    }
     val piece = this.board[row][column] ?: return this
     if (piece != this.playerPiece) {
         onError("You can only remove your own pieces!")
@@ -225,22 +256,22 @@ fun GameState.handleRemovePieceOnGridCell(row: Int, column: Int, onError: (Strin
     }
 
     println("Remove on ($row, $column) by ${this.playerPiece}")
-    val newBoard = this.board.updateCell(
-        row = row,
-        column = column,
-        piece = null
-    )
+    val newBoard = this.board.updateCell(row = row, column = column, piece = null)
     return this.copy(board = newBoard)
 }
 
 fun GameState.handleCaptureOpponentPieceOnGridCell(row: Int, column: Int, onError: (String)->Unit): GameState {
+    if (!allPiecesPlaced) {
+        onError("You can only capture the opponent pieces after all pieces are placed!")
+        return this
+    }
     val piece = this.board[row][column] ?: return this
     if (piece == this.playerPiece) {
         onError("You can only capture your opponent pieces!")
         return this
     }
 
-    println("Remove on ($row, $column) by ${this.playerPiece}")
+    println("Piece captured on ($row, $column)")
     val newBoard = this.board.updateCell(
         row = row,
         column = column,
@@ -260,7 +291,7 @@ fun GameState.handleMovePieceOnGridCell(fromRow: Int, fromColumn: Int, toRow: In
     return this.copy(board = newBoard)
 }
 
-fun initialBoardState(): SeegaBoard = List(5) { List(5) { null } }
+val initialBoardState: SeegaBoard get() = List(5) { List(5) { null } }
 
 fun SeegaBoard.updateCell(
     row: Int,
@@ -279,6 +310,4 @@ fun SeegaBoard.updateCell(
         } else rowList
     }
 }
-
-
 

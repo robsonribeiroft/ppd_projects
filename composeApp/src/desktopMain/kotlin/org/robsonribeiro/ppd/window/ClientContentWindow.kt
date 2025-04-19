@@ -1,5 +1,9 @@
 package org.robsonribeiro.ppd.window
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -12,7 +16,6 @@ import org.robsonribeiro.ppd.component.BentoComponent
 import org.robsonribeiro.ppd.component.chat.ChatComponent
 import org.robsonribeiro.ppd.component.game.*
 import org.robsonribeiro.ppd.component.game.logic.ApplicationState
-import org.robsonribeiro.ppd.component.game.logic.GameAction
 import org.robsonribeiro.ppd.component.game.logic.GameOutcome
 import org.robsonribeiro.ppd.component.game.logic.isReadyToPlay
 import org.robsonribeiro.ppd.component.server.ConnectClientButtonComponent
@@ -98,12 +101,17 @@ fun ClientContentWindow(
                                     onCellClick = viewModel::onBoardCellClick,
                                     onMovePiece = viewModel::movePiece
                                 )
-                                if (gameState.gameOutcome != GameOutcome.Ongoing) {
-                                    GameResultInfoComponent(
-                                        modifier = Modifier,
-                                        gameState = gameState
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    AnimatedVisibility(
+                                        visible = gameState.gameOutcome != GameOutcome.Ongoing,
+                                        enter = fadeIn(animationSpec = tween(500))
                                     ) {
-                                        viewModel.newGame()
+                                        GameResultInfoComponent(
+                                            modifier = Modifier,
+                                            gameState = gameState
+                                        ) {
+                                            viewModel.newGame()
+                                        }
                                     }
                                 }
                             }

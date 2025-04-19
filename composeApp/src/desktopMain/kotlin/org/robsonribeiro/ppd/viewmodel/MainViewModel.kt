@@ -81,11 +81,9 @@ class MainViewModel : ViewModel() {
                 is SeegaBoardPayload -> {
                     _gameState.value = _gameState.value.copy(board = payload.seegaBoard)
                     _gameState.value = _gameState.value.checkAllPiecesArePlaced()
-//                    _gameState.checkGameOutcome()
                 }
                 is ScoreBoardPayload -> {
                     _scoredBoardOpponent.value = payload.opponentScoreBoard
-//                    _gameState.checkGameOutcome()
                 }
                 is GameOutcomePayload -> {
                     _applicationState.value = ApplicationState.READY_TO_PLAY
@@ -142,21 +140,27 @@ class MainViewModel : ViewModel() {
             clientSocket?.sendSeegaBoard(board)
             clientSocket?.sendScoreBoard(playerPiece!!, amountPiecesCaptured)
         }
-        //_gameState.checkGameOutcome()
-        checkGameOutCome()
+        if (_gameState.value.allPiecesPlaced && _gameState.value.gameAction == GameAction.CAPTURE) {
+            val gameOutComeAfterPieceMoved = _gameState.value.board.checkGameOutComeAfterCapture()
+            if (gameOutComeAfterPieceMoved != GameOutcome.Ongoing) {
+                _gameState.value = _gameState.value.copy(
+                    gameOutcome = gameOutComeAfterPieceMoved
+                )
+                clientSocket?.sendGameOutCome(gameOutComeAfterPieceMoved)
+            }
+        }
     }
 
     fun movePiece(fromRow: Int, fromColumn: Int, toRow: Int, toColumn: Int) {
         _gameState.handleMovePieceOnGridCell(fromRow, fromColumn, toRow, toColumn)
         clientSocket?.sendSeegaBoard(_gameState.value.board)
-        //_gameState.checkGameOutcome()
-        checkGameOutCome()
-    }
-
-    private fun checkGameOutCome() {
-        val calculatedOutcome  = _gameState.value.checkGameOutcome()
-        _gameState.value = _gameState.value.copy(gameOutcome = calculatedOutcome)
-        clientSocket?.sendGameOutCome(calculatedOutcome)
+        val gameOutComeAfterPieceMoved = _gameState.value.board.checkGameOutComeAfterMove()
+        if (gameOutComeAfterPieceMoved != GameOutcome.Ongoing) {
+            _gameState.value = _gameState.value.copy(
+                gameOutcome = gameOutComeAfterPieceMoved
+            )
+            clientSocket?.sendGameOutCome(gameOutComeAfterPieceMoved)
+        }
     }
 
     fun leaveServer() {

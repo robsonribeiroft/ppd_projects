@@ -1,9 +1,12 @@
 package org.robsonribeiro.ppd.helper
 
+import org.robsonribeiro.ppd.komms.rmi.KommServerRmi
+import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.SocketTimeoutException
-import java.io.IOException
+import java.rmi.RemoteException
+import java.rmi.registry.LocateRegistry
 
 fun isServerLive(host: String, port: Int, timeoutMillis: Int = 100): Boolean {
     val socket = Socket()
@@ -28,5 +31,20 @@ fun isServerLive(host: String, port: Int, timeoutMillis: Int = 100): Boolean {
         try {
             socket.close()
         } catch (_: Exception) { }
+    }
+}
+
+
+fun isServerRmiLive(host: String, port: Int, serviceName: String = KommServerRmi.serverName): Boolean {
+    return try {
+        val registry = LocateRegistry.getRegistry(host, port)
+        registry.lookup(serviceName)
+        true
+    } catch (e: RemoteException) {
+        e.printStackTrace()
+        false
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
     }
 }

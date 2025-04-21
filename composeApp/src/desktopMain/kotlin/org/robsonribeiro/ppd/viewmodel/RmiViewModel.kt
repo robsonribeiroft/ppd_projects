@@ -4,15 +4,15 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.robsonribeiro.ppd.component.game.logic.*
+import org.robsonribeiro.ppd.helper.isServerLive
 import org.robsonribeiro.ppd.helper.isServerRmiLive
-import org.robsonribeiro.ppd.komms.CHANNEL_CHAT_SYSTEM
-import org.robsonribeiro.ppd.komms.Command
+import org.robsonribeiro.ppd.komms.*
 import org.robsonribeiro.ppd.komms.model.*
 import org.robsonribeiro.ppd.komms.rmi.KommClientRmi
 import org.robsonribeiro.ppd.komms.rmi.KommServerRmi
 import org.robsonribeiro.ppd.model.*
 
-class MainViewModel : ViewModel() {
+class RmiViewModel : ViewModel() {
 
     private var server: KommServerRmi? = null
     private var client: KommClientRmi? = null

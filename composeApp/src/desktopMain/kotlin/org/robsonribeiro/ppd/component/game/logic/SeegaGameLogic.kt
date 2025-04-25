@@ -19,7 +19,7 @@ fun SeegaBoard.printSeegaBoard() {
 
 enum class PlayerPiece(
     val color: Color
-) {
+) : java.io.Serializable {
     PLAYER_ONE(ColorResources.RedPantone),
     PLAYER_TWO(ColorResources.BlueRoyal)
 }
@@ -34,7 +34,7 @@ fun randomPlayerPiece(): PlayerPiece {
     return pieces[randomIndex]
 }
 
-enum class ApplicationState {
+enum class ApplicationState: java.io.Serializable {
     WAITING_PLAYERS, GET_PIECE, READY_TO_PLAY
 }
 
@@ -42,7 +42,7 @@ fun ApplicationState.isReadyToPlay(): Boolean {
     return this == ApplicationState.READY_TO_PLAY
 }
 
-enum class GameAction {
+enum class GameAction : java.io.Serializable {
     PLACE, REMOVE, MOVE, CAPTURE
 }
 
@@ -53,10 +53,10 @@ data class GameState(
     val amountPiecesCaptured: Int = 0,
     val gameOutcome: GameOutcome = GameOutcome.Ongoing,
     val allPiecesPlaced: Boolean = false
-)
+) : java.io.Serializable
 
 @Serializable
-sealed interface GameOutcome {
+sealed interface GameOutcome : java.io.Serializable {
     @Serializable
     data object Ongoing : GameOutcome
     @Serializable

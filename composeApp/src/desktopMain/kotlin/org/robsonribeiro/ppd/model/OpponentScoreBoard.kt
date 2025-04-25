@@ -8,4 +8,4 @@ data class OpponentScoreBoard(
     val opponentClientId: String? = null,
     val opponentPiece: PlayerPiece? = null,
     val opponentAmountCaptured: Int = 0
-)
+): java.io.Serializable

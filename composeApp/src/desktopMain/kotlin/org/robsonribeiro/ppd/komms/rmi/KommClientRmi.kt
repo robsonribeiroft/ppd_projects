@@ -68,13 +68,12 @@ class KommClientRmi(
     }
 
     fun sendChatMessage(message: String) {
-        val dataToSend = KommData(
+        val kommData = KommData(
             clientId = clientId!!,
             channel = CHANNEL_CHAT,
             data = ChatMessagePayload(message = message)
         )
-        val jsonString = Json.encodeToString(dataToSend)
-        sendJson(jsonString)
+        //server.sendChatMessagePayload(kommData)
     }
 
     fun sendCommand(command: String, args: List<String> = emptyList()) {
@@ -88,6 +87,7 @@ class KommClientRmi(
             channel = CHANNEL_COMMAND,
             data = CommandPayload(command = actualCommand)
         )
+        //server.send
         sendJson(dataToSend.toJson())
     }
 

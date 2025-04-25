@@ -8,14 +8,13 @@ import org.robsonribeiro.ppd.helper.isServerRmiLive
 import org.robsonribeiro.ppd.komms.CHANNEL_CHAT_SYSTEM
 import org.robsonribeiro.ppd.komms.Command
 import org.robsonribeiro.ppd.komms.model.*
-import org.robsonribeiro.ppd.komms.rmi.KommClientRmi
-import org.robsonribeiro.ppd.komms.rmi.KommServerRmi
+import org.robsonribeiro.ppd.komms.rmi.*
 import org.robsonribeiro.ppd.model.*
 
 class MainViewModel : ViewModel() {
 
-    private var server: KommServerRmi? = null
-    private var client: KommClientRmi? = null
+    private var server: KommServer? = null
+    private var client: KommClient? = null
 
     private val _applicationState = MutableStateFlow(ApplicationState.WAITING_PLAYERS)
     val applicationState = _applicationState.asStateFlow()
@@ -43,7 +42,7 @@ class MainViewModel : ViewModel() {
 
     fun startServer(host: String, port: Int) {
         if (!isServerRmiLive(host, port)) {
-            server = KommServerRmi(host, port)
+            server = KommServer(host, port)
             server?.start()
         }
         _serverState.value = ServerState(
@@ -60,46 +59,37 @@ class MainViewModel : ViewModel() {
     }
 
     fun registerClient(clientId: String) {
-        client = KommClientRmi(_serverState.value.host!!, _serverState.value.port!!)
-        client?.handshake(clientId) { json ->
-            val receivedKommData = json.decodeJson()
-            when(val payload = receivedKommData.data) {
-                is ChatMessagePayload -> {
-                    _chatlogs.value += ChatMessage(
-                        sender = receivedKommData.clientId,
-                        message = payload.message,
-                        messageOwner = handleChatTypeMessage(receivedKommData)
-                    )
+        client = KommClient(_serverState.value.host!!, _serverState.value.port!!)
+        client?.handshake(clientId, KommClient.ClientCallbackHandler(
+            onChat = { clientId, channel, message ->
+                _chatlogs.value += ChatMessage(
+                    sender = clientId,
+                    message = message,
+                    messageOwner = handleChatTypeMessage(channel)
+                )
+            },
+            onPiece = { piece ->
+                _applicationState.value = ApplicationState.GET_PIECE
+                _gameState.setPlayerPiece(piece)
+            },
+            onPlayersConnected = { amountOfPlayersConnected ->
+                if (amountOfPlayersConnected == 2) {
+                    allPlayerAreConnected()
                 }
-                is PlayerPiecePayload -> {
-                    println("PlayerPiecePayload: $receivedKommData")
-                    _applicationState.value = ApplicationState.GET_PIECE
-                    _gameState.setPlayerPiece(payload.piece)
-                }
-                is PlayersConnectedPayload -> {
-                    if (payload.amountOfPlayersConnected == 2) {
-                        allPlayerAreConnected()
-                    }
-                }
-                is SeegaBoardPayload -> {
-                    _gameState.value = _gameState.value.copy(board = payload.seegaBoard)
-                    _gameState.value = _gameState.value.checkAllPiecesArePlaced()
-                }
-                is ScoreBoardPayload -> {
-                    _scoredBoardOpponent.value = payload.opponentScoreBoard
-                }
-                is GameOutcomePayload -> {
-                    _applicationState.value = ApplicationState.READY_TO_PLAY
-                    _gameState.value = _gameState.value.copy(
-                        gameOutcome = payload.gameOutcome
-                    )
-                }
-                is NewGamePayload -> {
-                    _gameState.value = GameState()
-                }
-                else -> Unit
-            }
-        }
+            },
+            onBoard = { seegaBoard ->
+                _gameState.value = _gameState.value.copy(board = seegaBoard)
+                _gameState.value = _gameState.value.checkAllPiecesArePlaced()
+            },
+            onScore = { opponentScoreBoard ->
+                _scoredBoardOpponent.value = opponentScoreBoard
+            },
+            onOutcome = { gameOutcome ->
+                _applicationState.value = ApplicationState.READY_TO_PLAY
+                _gameState.value = _gameState.value.copy(gameOutcome = gameOutcome)
+            },
+            onNewGame = { _gameState.value = GameState() }
+        ))
         _clientState.value = ClientState(
             clientId = clientId,
             isConnected = true
@@ -125,8 +115,8 @@ class MainViewModel : ViewModel() {
         _gameState.setPlayerPiece(playerPiece)
     }
 
-    private fun handleChatTypeMessage(kommData: KommData) : TypeMessage {
-        if (kommData.channel == CHANNEL_CHAT_SYSTEM)
+    private fun handleChatTypeMessage(channel: String) : TypeMessage {
+        if (channel == CHANNEL_CHAT_SYSTEM)
             return TypeMessage.SYSTEM
         return TypeMessage.FOREIGNER
     }

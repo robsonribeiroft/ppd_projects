@@ -9,4 +9,4 @@ data class ScoreBoardInfo(
     val opponentPlayerPiece: PlayerPiece? = null,
     val capturedPiecesAmount: Int = 0,
     val opponentCapturedPiecesAmount: Int = 0
-)
+) : java.io.Serializable

@@ -9,7 +9,7 @@ import org.robsonribeiro.ppd.component.game.logic.SeegaBoard
 import org.robsonribeiro.ppd.model.OpponentScoreBoard
 
 @Serializable
-sealed interface MessagePayload
+sealed interface MessagePayload : java.io.Serializable
 
 @Serializable
 @SerialName("CHAT_MESSAGE")
@@ -64,8 +64,13 @@ data class KommData(
     val clientId: String,
     val channel: String,
     val data: MessagePayload
-)
+): java.io.Serializable
 
 fun KommData.toJson() = Json.encodeToString(this)
 
 fun String.decodeJson(): KommData = Json.decodeFromString<KommData>(this)
+
+@Suppress("UNCHECKED_CAST")
+operator fun <T : MessagePayload> KommData.invoke(block: (Triple<String, String, T>)->Unit) {
+    block(Triple(clientId, channel, data as T))
+}
